@@ -38,6 +38,7 @@ import { EditTaskModal } from '../../tasks/components/EditTaskModal';
 import { Button } from '../../../shared/components/ui/Button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { format, isToday, isBefore, startOfDay, subMonths, startOfMonth, endOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#8b5cf6'];
 
@@ -109,7 +110,7 @@ export function DashboardPage() {
     const months = Array.from({ length: 7 }).map((_, i) => {
       const d = subMonths(new Date(), 6 - i);
       return {
-        name: format(d, 'MMM'),
+        name: format(d, 'MMM', { locale: ptBR }),
         date: d,
         value: 0
       };
@@ -117,8 +118,21 @@ export function DashboardPage() {
 
     months.forEach(m => {
       m.value = clients.filter(c => {
-        const created = c.createdAt?.toDate?.() || new Date();
-        return created && created <= endOfMonth(m.date);
+        let created: Date | null = null;
+        if (c.createdAt?.toDate) {
+          created = c.createdAt.toDate();
+        } else if (c.createdAt?.seconds) {
+          created = new Date(c.createdAt.seconds * 1000);
+        } else if (typeof c.createdAt === 'string') {
+          created = new Date(c.createdAt);
+        } else if (c.createdAt instanceof Date) {
+          created = c.createdAt;
+        }
+
+        if (!created || isNaN(created.getTime())) {
+          return true;
+        }
+        return created <= endOfMonth(m.date);
       }).length;
     });
 
@@ -127,11 +141,14 @@ export function DashboardPage() {
 
   const evolutionData = getEvolutionData();
 
+  const activeClientsCount = clients.filter(c => c.status === 'active' || (!c.status && c.active !== false)).length;
+  const totalClientsCount = clients.length;
+
   const kpis = [
     { 
       label: 'Clientes Ativos', 
-      value: clients.filter(c => c.status === 'active').length.toString(), 
-      trend: '+12%', 
+      value: activeClientsCount.toString(), 
+      trend: `${totalClientsCount} clientes cadastrados`, 
       icon: Users, 
       color: 'text-primary',
       path: '/dashboard/clients'

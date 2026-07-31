@@ -13,11 +13,12 @@ import {
   AlertCircle,
   Users,
   Pencil,
-  Trash2
+  Trash2,
+  UserX
 } from 'lucide-react';
 import { clientService } from '../services/clientService';
 import { useAuth } from '../../../app/providers/AuthProvider';
-import { Client, TaxRegime } from '../types';
+import { Client, ClientStatus, TaxRegime } from '../types';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
 import { AddClientModal } from '../components/AddClientModal';
@@ -31,6 +32,7 @@ export function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [regimeFilter, setRegimeFilter] = useState<TaxRegime | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
 
@@ -45,6 +47,10 @@ export function ClientsPage() {
     return () => unsubscribe();
   }, [userData?.companyId]);
 
+  const activeCount = clients.filter(c => c.status === 'active').length;
+  const inactiveCount = clients.filter(c => c.status === 'inactive').length;
+  const leadCount = clients.filter(c => c.status === 'lead' || c.status === 'blocked').length;
+
   const filteredClients = clients.filter(client => {
     const matchesSearch = 
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,13 +58,15 @@ export function ClientsPage() {
       client.document.includes(searchTerm);
     
     const matchesRegime = regimeFilter === 'all' || client.taxRegime === regimeFilter;
+    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
     
-    return matchesSearch && matchesRegime;
+    return matchesSearch && matchesRegime && matchesStatus;
   });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'active': return <CheckCircle2 size={16} className="text-success" />;
+      case 'inactive': return <UserX size={16} className="text-muted-foreground" />;
       case 'lead': return <Clock size={16} className="text-warning" />;
       case 'blocked': return <AlertCircle size={16} className="text-danger" />;
       default: return null;
@@ -100,6 +108,49 @@ export function ClientsPage() {
         </Button>
       </div>
 
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total de Clientes</span>
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Users size={18} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{clients.length}</p>
+        </div>
+
+        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes Ativos</span>
+            <div className="p-2 rounded-lg bg-success/10 text-success">
+              <CheckCircle2 size={18} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{activeCount}</p>
+        </div>
+
+        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Clientes Inativos</span>
+            <div className="p-2 rounded-lg bg-muted/80 text-muted-foreground">
+              <UserX size={18} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{inactiveCount}</p>
+        </div>
+
+        <div className="bg-card p-5 rounded-xl border border-border shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Leads / Outros</span>
+            <div className="p-2 rounded-lg bg-warning/10 text-warning">
+              <Clock size={18} />
+            </div>
+          </div>
+          <p className="text-2xl font-bold">{leadCount}</p>
+        </div>
+      </div>
+
       <AddClientModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
@@ -124,8 +175,20 @@ export function ClientsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <Filter size={18} className="text-muted-foreground" />
+          <select 
+            className="bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as any)}
+          >
+            <option value="all">Todos os Status</option>
+            <option value="active">Ativos ({activeCount})</option>
+            <option value="inactive">Inativos ({inactiveCount})</option>
+            <option value="lead">Leads</option>
+            <option value="blocked">Bloqueados</option>
+          </select>
+
           <select 
             className="bg-background border border-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all outline-none"
             value={regimeFilter}

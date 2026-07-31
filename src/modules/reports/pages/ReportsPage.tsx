@@ -26,28 +26,14 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
+import { format, subMonths, endOfMonth } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { reportService } from '../services/reportService';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { Button } from '../../../shared/components/ui/Button';
 import { cn } from '../../../shared/utils/cn';
 
 const COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#8b5cf6'];
-
-const growthData = [
-  { month: 'Jan', clients: 40, revenue: 2400 },
-  { month: 'Fev', clients: 45, revenue: 2800 },
-  { month: 'Mar', clients: 48, revenue: 3200 },
-  { month: 'Abr', clients: 55, revenue: 3800 },
-  { month: 'Mai', clients: 62, revenue: 4200 },
-  { month: 'Jun', clients: 72, revenue: 5100 },
-];
-
-const clientTypesData = [
-  { name: 'MEI', value: 35 },
-  { name: 'Simples Nac.', value: 45 },
-  { name: 'Lucro Pres.', value: 15 },
-  { name: 'Outros', value: 5 },
-];
 
 export function ReportsPage() {
   const { userData } = useAuth();
@@ -62,15 +48,49 @@ export function ReportsPage() {
         const clientStats = await reportService.getClientStats(userData.companyId);
         const taskStats = await reportService.getTaskStats(userData.companyId);
         
-        // Transform stats for charts
+        // Calculate dynamic growth data over the last 6 months based on actual client records
+        const months = Array.from({ length: 6 }).map((_, i) => {
+          const d = subMonths(new Date(), 5 - i);
+          return {
+            month: format(d, 'MMM', { locale: ptBR }),
+            date: d,
+            clients: 0
+          };
+        });
+
+        const rawClients = clientStats.rawClients || [];
+        months.forEach(m => {
+          m.clients = rawClients.filter((c: any) => {
+            let created: Date | null = null;
+            if (c.createdAt?.toDate) {
+              created = c.createdAt.toDate();
+            } else if (c.createdAt?.seconds) {
+              created = new Date(c.createdAt.seconds * 1000);
+            } else if (typeof c.createdAt === 'string') {
+              created = new Date(c.createdAt);
+            } else if (c.createdAt instanceof Date) {
+              created = c.createdAt;
+            }
+
+            if (!created || isNaN(created.getTime())) {
+              return true;
+            }
+            return created <= endOfMonth(m.date);
+          }).length;
+        });
+
+        // Transform stats for distribution chart
+        const totalClients = clientStats.total || 1;
         const transformedTypeData = Object.entries(clientStats.byType).map(([name, value]: [string, any]) => ({
           name,
-          value: Math.round((value / clientStats.total) * 100)
+          value: Math.round((value / totalClients) * 100),
+          count: value
         }));
 
         setStats({ 
           clients: clientStats, 
           tasks: taskStats,
+          growthData: months,
           typeData: transformedTypeData 
         });
       } catch (error) {
@@ -83,7 +103,8 @@ export function ReportsPage() {
     fetchStats();
   }, [userData?.companyId]);
 
-  const displayClientTypesData = stats?.typeData?.length > 0 ? stats.typeData : clientTypesData;
+  const growthData = stats?.growthData || [];
+  const displayClientTypesData = stats?.typeData || [];
 
   return (
     <div className="space-y-8">

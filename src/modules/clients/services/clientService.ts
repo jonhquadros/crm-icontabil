@@ -19,17 +19,30 @@ export const clientService = {
     const q = query(
       collection(db, 'clients'),
       where('companyId', '==', companyId),
-      where('active', '==', true),
-      orderBy('createdAt', 'desc')
+      where('active', '==', true)
     );
 
-    return onSnapshot(q, (snapshot) => {
-      const clients = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Client[];
-      callback(clients);
-    });
+    return onSnapshot(
+      q, 
+      (snapshot) => {
+        const clients = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Client[];
+
+        clients.sort((a, b) => {
+          const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+          const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+          return timeB - timeA;
+        });
+
+        callback(clients);
+      },
+      (error) => {
+        console.error("Error subscribing to clients:", error);
+        callback([]);
+      }
+    );
   },
 
   createClient: async (clientData: Omit<Client, 'id' | 'createdAt' | 'updatedAt' | 'active'>) => {

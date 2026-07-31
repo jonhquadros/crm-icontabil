@@ -135,6 +135,20 @@ export function AddClientModal({ isOpen, onClose, companyId }: AddClientModalPro
           </div>
         </div>
 
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-muted-foreground uppercase">Status do Cliente</label>
+          <select 
+            className="w-full bg-background border border-border rounded-lg py-2 px-3 text-sm"
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+          >
+            <option value="active">Ativo</option>
+            <option value="inactive">Inativo</option>
+            <option value="lead">Lead / Prospecto</option>
+            <option value="blocked">Bloqueado</option>
+          </select>
+        </div>
+
         <div className="pt-4 flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" loading={loading}>Cadastrar Cliente</Button>
