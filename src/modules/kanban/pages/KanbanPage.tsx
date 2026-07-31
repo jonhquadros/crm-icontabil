@@ -516,7 +516,17 @@ export function KanbanPage() {
                         )}
                       >
                         {getCardsByColumn(column.id).map((card, index) => (
-                          <KanbanCardItem key={card.id} card={card} index={index} onClick={() => setSelectedCard(card)} />
+                          <KanbanCardItem 
+                            key={card.id} 
+                            card={card} 
+                            index={index} 
+                            onClick={() => setSelectedCard(card)} 
+                            onDelete={() => {
+                              if (window.confirm('Tem certeza de que deseja excluir permanentemente esta oportunidade?')) {
+                                handleBulkDelete([card.id]);
+                              }
+                            }}
+                          />
                         ))}
                         {provided.placeholder}
                       </div>

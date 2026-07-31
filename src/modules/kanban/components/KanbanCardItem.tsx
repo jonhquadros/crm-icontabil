@@ -24,11 +24,12 @@ interface KanbanCardItemProps {
   index: number;
   key?: React.Key;
   onClick?: () => void;
+  onDelete?: () => void;
 }
 
 const DraggableComponent = Draggable as any;
 
-export function KanbanCardItem({ card, index, onClick }: KanbanCardItemProps) {
+export function KanbanCardItem({ card, index, onClick, onDelete }: KanbanCardItemProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const getPriorityColor = (priority: string) => {
@@ -112,7 +113,14 @@ export function KanbanCardItem({ card, index, onClick }: KanbanCardItemProps) {
                       <ArrowRight size={12} /> Mover
                     </button>
                     <div className="h-px bg-border my-1"></div>
-                    <button className="w-full text-left px-3 py-2 text-xs hover:bg-danger/10 text-danger flex items-center gap-2">
+                    <button 
+                      onClick={(e) => {
+                        stopPropagation(e);
+                        setShowMenu(false);
+                        if (onDelete) onDelete();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-danger/10 text-danger flex items-center gap-2"
+                    >
                       <Trash2 size={12} /> Excluir
                     </button>
                   </div>

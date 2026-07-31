@@ -114,6 +114,8 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
 
   useEffect(() => {
     if (card) {
+      const addr = card.address;
+      const isAddrObj = typeof addr === 'object' && addr !== null;
       setEditForm({
         clientName: card.clientName || '',
         companyName: card.companyName || '',
@@ -127,10 +129,10 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
         origin: card.origin || '',
         priority: card.priority || 'medium',
         labels: card.labels || [],
-        addressStreet: typeof card.address === 'object' ? card.address.street : (typeof card.address === 'string' ? card.address : ''),
-        addressNumber: typeof card.address === 'object' ? card.address.number : '',
-        addressCity: typeof card.address === 'object' ? card.address.city : '',
-        addressState: typeof card.address === 'object' ? card.address.state : '',
+        addressStreet: isAddrObj ? (addr.street || '') : (typeof addr === 'string' ? addr : ''),
+        addressNumber: isAddrObj ? (addr.number || '') : '',
+        addressCity: isAddrObj ? (addr.city || '') : '',
+        addressState: isAddrObj ? (addr.state || '') : '',
       });
     }
   }, [card, user]);
@@ -633,7 +635,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Cliente / Nome Oportunidade</label>
                     <Input 
-                      value={editForm.clientName} 
+                      value={editForm.clientName || ''} 
                       onChange={e => setEditForm({...editForm, clientName: e.target.value})} 
                       className="mt-1"
                     />
@@ -641,7 +643,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Nome da Empresa (Razão Social)</label>
                     <Input 
-                      value={editForm.companyName} 
+                      value={editForm.companyName || ''} 
                       onChange={e => setEditForm({...editForm, companyName: e.target.value})} 
                       className="mt-1"
                     />
@@ -649,7 +651,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Tipo de Cliente</label>
                     <select 
-                      value={editForm.clientType} 
+                      value={editForm.clientType || 'PJ'} 
                       onChange={e => setEditForm({...editForm, clientType: e.target.value as any})}
                       className="w-full bg-background border border-border rounded-lg py-2 px-3 text-xs mt-1"
                     >
@@ -661,7 +663,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Regime Tributário</label>
                     <select 
-                      value={editForm.taxRegime} 
+                      value={editForm.taxRegime || 'Simples Nacional'} 
                       onChange={e => setEditForm({...editForm, taxRegime: e.target.value as any})}
                       className="w-full bg-background border border-border rounded-lg py-2 px-3 text-xs mt-1"
                     >
@@ -674,7 +676,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">CPF / CNPJ</label>
                     <Input 
-                      value={editForm.document} 
+                      value={editForm.document || ''} 
                       onChange={e => setEditForm({...editForm, document: e.target.value})} 
                       className="mt-1"
                       placeholder="00.000.000/0000-00"
@@ -683,7 +685,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Email</label>
                     <Input 
-                      value={editForm.email} 
+                      value={editForm.email || ''} 
                       onChange={e => setEditForm({...editForm, email: e.target.value})} 
                       className="mt-1"
                       placeholder="email@cliente.com"
@@ -692,7 +694,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Telefone</label>
                     <Input 
-                      value={editForm.phone} 
+                      value={editForm.phone || ''} 
                       onChange={e => setEditForm({...editForm, phone: e.target.value})} 
                       className="mt-1"
                     />
@@ -700,7 +702,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">WhatsApp</label>
                     <Input 
-                      value={editForm.whatsapp} 
+                      value={editForm.whatsapp || ''} 
                       onChange={e => setEditForm({...editForm, whatsapp: e.target.value})} 
                       className="mt-1"
                     />
@@ -708,7 +710,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Responsável</label>
                     <Input 
-                      value={editForm.responsible} 
+                      value={editForm.responsible || ''} 
                       onChange={e => setEditForm({...editForm, responsible: e.target.value})} 
                       className="mt-1"
                     />
@@ -716,7 +718,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Origem do Lead</label>
                     <Input 
-                      value={editForm.origin} 
+                      value={editForm.origin || ''} 
                       onChange={e => setEditForm({...editForm, origin: e.target.value})} 
                       className="mt-1"
                       placeholder="Ex: Google, Indicação"
@@ -725,7 +727,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Logradouro / Rua</label>
                     <Input 
-                      value={editForm.addressStreet} 
+                      value={editForm.addressStreet || ''} 
                       onChange={e => setEditForm({...editForm, addressStreet: e.target.value})} 
                       className="mt-1"
                       placeholder="Rua / Av..."
@@ -734,7 +736,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                   <div>
                     <label className="font-bold text-muted-foreground uppercase text-[10px]">Número / Cidade / UF</label>
                     <Input 
-                      value={editForm.addressCity} 
+                      value={editForm.addressCity || ''} 
                       onChange={e => setEditForm({...editForm, addressCity: e.target.value})} 
                       className="mt-1"
                       placeholder="Ex: São Paulo - SP"

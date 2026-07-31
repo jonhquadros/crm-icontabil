@@ -8,7 +8,8 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
-  writeBatch
+  writeBatch,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { KanbanCard, KanbanColumn, Pipeline, ChecklistItem, NoteItem, TimelineEvent } from '../../clients/types';
@@ -85,10 +86,7 @@ export const kanbanService = {
 
   deleteCard: async (cardId: string) => {
     const cardRef = doc(db, 'kanban', cardId);
-    return updateDoc(cardRef, {
-      active: false,
-      updatedAt: serverTimestamp(),
-    });
+    return deleteDoc(cardRef);
   },
 
   addTimelineEvent: async (cardId: string, event: Omit<TimelineEvent, 'id' | 'createdAt'>, existingTimeline: TimelineEvent[] = []) => {

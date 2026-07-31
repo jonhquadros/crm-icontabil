@@ -110,6 +110,7 @@ export function DocumentsPage() {
   };
 
   const handleDeleteFile = async (fileId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir este arquivo permanentemente do banco de dados?')) return;
     try {
       await documentService.deleteFile(fileId);
       toast.success('Arquivo excluído com sucesso');
@@ -120,6 +121,7 @@ export function DocumentsPage() {
   };
 
   const handleDeleteFolder = async (folderId: string) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta pasta permanentemente do banco de dados?')) return;
     try {
       await documentService.deleteFolder(folderId);
       toast.success('Pasta excluída com sucesso');

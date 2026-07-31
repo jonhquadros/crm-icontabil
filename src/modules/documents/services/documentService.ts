@@ -132,17 +132,11 @@ export const documentService = {
 
   deleteFile: async (fileId: string) => {
     const fileRef = doc(db, 'documents', fileId);
-    return updateDoc(fileRef, {
-      active: false,
-      updatedAt: serverTimestamp(),
-    });
+    return deleteDoc(fileRef);
   },
 
   deleteFolder: async (folderId: string) => {
     const folderRef = doc(db, 'folders', folderId);
-    return updateDoc(folderRef, {
-      active: false,
-      updatedAt: serverTimestamp(),
-    });
+    return deleteDoc(folderRef);
   }
 };

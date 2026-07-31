@@ -57,9 +57,6 @@ export const taskService = {
 
   deleteTask: async (id: string) => {
     const taskRef = doc(db, 'tasks', id);
-    return updateDoc(taskRef, {
-      active: false,
-      updatedAt: serverTimestamp(),
-    });
+    return deleteDoc(taskRef);
   }
 };

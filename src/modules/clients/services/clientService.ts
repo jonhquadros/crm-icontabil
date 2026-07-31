@@ -69,9 +69,6 @@ export const clientService = {
 
   deleteClient: async (id: string) => {
     const clientRef = doc(db, 'clients', id);
-    return updateDoc(clientRef, {
-      active: false,
-      updatedAt: serverTimestamp(),
-    });
+    return deleteDoc(clientRef);
   }
 };
