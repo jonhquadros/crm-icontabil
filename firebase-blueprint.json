@@ -1,0 +1,125 @@
+{
+  "collections": [
+    {
+      "name": "companies",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "cnpj", "type": "string" },
+        { "name": "plan", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" }
+      ]
+    },
+    {
+      "name": "users",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "email", "type": "string" },
+        { "name": "phone", "type": "string" },
+        { "name": "role", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "photoURL", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "lastAccessAt", "type": "timestamp" }
+      ]
+    },
+    {
+      "name": "permissions",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "userId", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "modules", "type": "map" }
+      ]
+    },
+    {
+      "name": "clients",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "taxRegime", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "companyName", "type": "string" },
+        { "name": "document", "type": "string" },
+        { "name": "phone", "type": "string" },
+        { "name": "whatsapp", "type": "string" },
+        { "name": "email", "type": "string" },
+        { "name": "address", "type": "map" },
+        { "name": "responsible", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "observations", "type": "string" },
+        { "name": "attachments", "type": "array" },
+        { "name": "kanbanCardId", "type": "string" },
+        { "name": "tags", "type": "array" },
+        { "name": "labels", "type": "array" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" }
+      ]
+    },
+    {
+      "name": "kanban",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "clientName", "type": "string" },
+        { "name": "companyName", "type": "string" },
+        { "name": "phone", "type": "string" },
+        { "name": "whatsapp", "type": "string" },
+        { "name": "responsible", "type": "string" },
+        { "name": "priority", "type": "string" },
+        { "name": "origin", "type": "string" },
+        { "name": "stuckSince", "type": "timestamp" },
+        { "name": "lastInteraction", "type": "timestamp" },
+        { "name": "labels", "type": "array" },
+        { "name": "column", "type": "string" },
+        { "name": "position", "type": "number" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" }
+      ]
+    },
+    {
+      "name": "logs",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "event", "type": "string" },
+        { "name": "module", "type": "string" },
+        { "name": "userId", "type": "string" },
+        { "name": "targetId", "type": "string" },
+        { "name": "targetType", "type": "string" },
+        { "name": "description", "type": "string" },
+        { "name": "metadata", "type": "map" },
+        { "name": "ipAddress", "type": "string" },
+        { "name": "userAgent", "type": "string" },
+        { "name": "severity", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" }
+      ]
+    }
+  ]
+}

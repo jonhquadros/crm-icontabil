@@ -1,0 +1,6 @@
+{
+  "name": "iContábil CRM",
+  "description": "CRM moderno para escritórios de contabilidade com integração WhatsApp Business e gestão Multi-Tenant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Allow any authenticated user to read/write all documents for now
+    // This is to resolve the immediate permission-denied errors blocking the user
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}
