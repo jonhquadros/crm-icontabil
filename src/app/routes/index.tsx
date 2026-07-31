@@ -13,6 +13,8 @@ import { ReportsPage } from '../../modules/reports/pages/ReportsPage';
 import { SettingsPage } from '../../modules/settings/pages/SettingsPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
+import { CRMListPage } from '../../modules/kanban/pages/CRMListPage';
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -23,11 +25,20 @@ export function AppRoutes() {
           <ProtectedRoute>
             <AppShell />
           </ProtectedRoute>
-        } 
+        }
       >
         <Route index element={<DashboardPage />} />
         <Route path="clients" element={<ClientsPage />} />
-        <Route path="kanban" element={<KanbanPage />} />
+        
+        <Route path="crm">
+          <Route index element={<Navigate to="pipeline" replace />} />
+          <Route path="pipeline" element={<KanbanPage />} />
+          <Route path="lista" element={<KanbanPage />} />
+          <Route path="agenda" element={<KanbanPage />} />
+          <Route path="atividades" element={<KanbanPage />} />
+          <Route path="relatorios" element={<KanbanPage />} />
+        </Route>
+
         <Route path="users" element={<UsersPage />} />
         <Route path="whatsapp" element={<WhatsAppPage />} />
         <Route path="documents" element={<DocumentsPage />} />

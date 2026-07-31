@@ -2,27 +2,29 @@ import React, { useState } from 'react';
 import { Modal } from '../../../shared/components/ui/Modal';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
-import { kanbanService } from '../services/kanbanService';
 import toast from 'react-hot-toast';
 import { serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { KanbanColumn } from '../../clients/types';
+import { useAuth } from '../../../app/providers/AuthProvider';
 
 interface AddCardModalProps {
   isOpen: boolean;
   onClose: () => void;
   companyId: string;
   userId: string;
+  pipelineId?: string | null;
 }
 
-export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModalProps) {
+export function AddCardModal({ isOpen, onClose, companyId, userId, pipelineId }: AddCardModalProps) {
+  const { userData, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     clientName: '',
     companyName: '',
     phone: '',
     origin: '',
-    priority: 'medium' as 'low' | 'medium' | 'high'
+    priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent'
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,22 +33,24 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
       toast.error('O nome do cliente ou oportunidade é obrigatório');
       return;
     }
-
     setLoading(true);
     try {
+      const creatorName = userData?.name || user?.displayName || user?.email?.split('@')[0] || 'Administrador';
       await addDoc(collection(db, 'kanban'), {
         ...formData,
         companyId,
-        responsible: userId, // assigning to current user initially
+        pipelineId: pipelineId || null,
+        responsible: creatorName, // assigning to current user's name
         column: 'lead' as KanbanColumn,
         position: Date.now(), // put at the bottom of the list
         labels: [],
         active: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        stuckSince: serverTimestamp(),
+        lastInteraction: serverTimestamp(),
         createdBy: userId,
       });
-
       toast.success('Card criado com sucesso!');
       onClose();
       setFormData({
@@ -75,7 +79,6 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
             onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
           />
         </div>
-
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-muted-foreground uppercase">Nome da Empresa (Opcional)</label>
           <Input 
@@ -84,7 +87,6 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
             onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
           />
         </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-muted-foreground uppercase">Telefone</label>
@@ -94,7 +96,6 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
           </div>
-
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-muted-foreground uppercase">Origem</label>
             <Input 
@@ -104,7 +105,6 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
             />
           </div>
         </div>
-
         <div className="space-y-1">
           <label className="text-[10px] font-bold text-muted-foreground uppercase">Prioridade</label>
           <select 
@@ -115,9 +115,9 @@ export function AddCardModal({ isOpen, onClose, companyId, userId }: AddCardModa
             <option value="low">Baixa</option>
             <option value="medium">Média</option>
             <option value="high">Alta</option>
+            <option value="urgent">Urgente</option>
           </select>
         </div>
-
         <div className="pt-4 flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" loading={loading}>Criar Card</Button>

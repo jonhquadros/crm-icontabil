@@ -100,5 +100,180 @@ export const seedDatabase = async (userId: string, email: string) => {
     });
   });
 
+  // 5. Create 5 Default Pipelines with their stages
+  const defaultPipelines = [
+    {
+      id: 'pipe_prospeccao',
+      name: 'Prospecção',
+      isDefault: true,
+      columns: [
+        { id: 'lead', label: 'Novo Lead', color: 'bg-slate-400', order: 0 },
+        { id: 'contact', label: 'Primeiro Contato', color: 'bg-primary', order: 1 },
+        { id: 'proposal', label: 'Proposta', color: 'bg-indigo-500', order: 2 },
+        { id: 'negotiation', label: 'Negociação', color: 'bg-purple-500', order: 3 },
+        { id: 'won', label: 'Ganho', color: 'bg-success', order: 4 },
+        { id: 'lost', label: 'Perdido', color: 'bg-danger', order: 5 },
+      ]
+    },
+    {
+      id: 'pipe_abertura',
+      name: 'Abertura de Empresa',
+      isDefault: false,
+      columns: [
+        { id: 'solicitation', label: 'Solicitação', color: 'bg-slate-400', order: 0 },
+        { id: 'documentation', label: 'Documentação', color: 'bg-primary', order: 1 },
+        { id: 'analysis', label: 'Análise', color: 'bg-warning', order: 2 },
+        { id: 'protocol', label: 'Protocolo', color: 'bg-indigo-500', order: 3 },
+        { id: 'waiting', label: 'Aguardando', color: 'bg-purple-500', order: 4 },
+        { id: 'completed', label: 'Concluído', color: 'bg-success', order: 5 },
+      ]
+    },
+    {
+      id: 'pipe_troca',
+      name: 'Troca de Contador',
+      isDefault: false,
+      columns: [
+        { id: 'contact', label: 'Contato', color: 'bg-slate-400', order: 0 },
+        { id: 'distrato', label: 'Distrato', color: 'bg-primary', order: 1 },
+        { id: 'transfer', label: 'Transferência', color: 'bg-warning', order: 2 },
+        { id: 'active', label: 'Ativo', color: 'bg-success', order: 3 },
+        { id: 'closed', label: 'Encerrado', color: 'bg-danger', order: 4 },
+      ]
+    },
+    {
+      id: 'pipe_fiscal',
+      name: 'Departamento Fiscal',
+      isDefault: false,
+      columns: [
+        { id: 'receiving', label: 'Recebimento', color: 'bg-slate-400', order: 0 },
+        { id: 'analysis', label: 'Análise', color: 'bg-primary', order: 1 },
+        { id: 'entry', label: 'Lançamento', color: 'bg-warning', order: 2 },
+        { id: 'review', label: 'Revisão', color: 'bg-purple-500', order: 3 },
+        { id: 'delivered', label: 'Entregue', color: 'bg-success', order: 4 },
+      ]
+    },
+    {
+      id: 'pipe_consultoria',
+      name: 'Consultoria',
+      isDefault: false,
+      columns: [
+        { id: 'diagnosis', label: 'Diagnóstico', color: 'bg-slate-400', order: 0 },
+        { id: 'proposal', label: 'Proposta', color: 'bg-primary', order: 1 },
+        { id: 'execution', label: 'Execução', color: 'bg-warning', order: 2 },
+        { id: 'delivery', label: 'Entrega', color: 'bg-purple-500', order: 3 },
+        { id: 'closed', label: 'Fechado', color: 'bg-success', order: 4 },
+      ]
+    }
+  ];
+
+  defaultPipelines.forEach((pipeline) => {
+    const pipelineRef = doc(db, 'pipelines', pipeline.id);
+    batch.set(pipelineRef, {
+      id: pipeline.id,
+      companyId: 'comp_default',
+      name: pipeline.name,
+      isDefault: pipeline.isDefault,
+      columns: pipeline.columns,
+      active: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: userId,
+    });
+
+    // Seed stages subcollection for this pipeline
+    pipeline.columns.forEach((col) => {
+      const stageRef = doc(db, 'pipelines', pipeline.id, 'stages', col.id);
+      batch.set(stageRef, {
+        id: col.id,
+        pipelineId: pipeline.id,
+        companyId: 'comp_default',
+        name: col.label,
+        color: col.color,
+        position: col.order,
+        isWon: col.id === 'won' || col.id === 'completed' || col.id === 'active' || col.id === 'delivered',
+        isLost: col.id === 'lost' || col.id === 'closed',
+        active: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        createdBy: userId,
+      });
+    });
+  });
+
+  // 6. Create some sample Kanban Cards distributed across the different pipelines
+  const sampleCards = [
+    {
+      id: 'card_1',
+      clientName: 'Roberto Alencar',
+      companyName: 'Alencar Alimentos Ltda',
+      phone: '(11) 98765-4321',
+      priority: 'high',
+      origin: 'Google',
+      pipelineId: 'pipe_prospeccao',
+      column: 'lead',
+      responsible: email.split('@')[0],
+      labels: ['Contabilidade', 'Urgente']
+    },
+    {
+      id: 'card_2',
+      clientName: 'Carla Souza',
+      companyName: 'Souza Vestuário',
+      phone: '(11) 97777-8888',
+      priority: 'medium',
+      origin: 'Indicação',
+      pipelineId: 'pipe_abertura',
+      column: 'solicitation',
+      responsible: email.split('@')[0],
+      labels: ['Abertura', 'MEI']
+    },
+    {
+      id: 'card_3',
+      clientName: 'Marcos Pontes',
+      companyName: 'Pontes Logística',
+      phone: '(11) 96666-5555',
+      priority: 'urgent',
+      origin: 'Google',
+      pipelineId: 'pipe_troca',
+      column: 'contact',
+      responsible: email.split('@')[0],
+      labels: ['Fiscal']
+    },
+    {
+      id: 'card_4',
+      clientName: 'Julia Martins',
+      companyName: 'Martins e Filho Ltda',
+      phone: '(11) 95555-4444',
+      priority: 'low',
+      origin: 'Google Ads',
+      pipelineId: 'pipe_fiscal',
+      column: 'receiving',
+      responsible: email.split('@')[0],
+      labels: ['Contabilidade']
+    }
+  ];
+
+  sampleCards.forEach((cardData, idx) => {
+    const cardRef = doc(db, 'kanban', cardData.id);
+    batch.set(cardRef, {
+      ...cardData,
+      companyId: 'comp_default',
+      active: true,
+      position: idx,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      stuckSince: serverTimestamp(),
+      lastInteraction: serverTimestamp(),
+      createdBy: userId,
+      messagesCount: 2,
+      documentsCount: 1,
+      tasksCount: 2,
+      tasksCompleted: 1,
+      notesCount: 1,
+      checklist: [],
+      notesList: [],
+      timeline: []
+    });
+  });
+
   await batch.commit();
 };

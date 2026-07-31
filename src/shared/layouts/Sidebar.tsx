@@ -1,6 +1,6 @@
-import React from 'react';
-import { LayoutGrid, Users, MessageSquare, Calendar, FileText, CheckSquare, BarChart3, Settings, LogOut, Shield, Layout } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { LayoutGrid, Users, MessageSquare, Calendar, FileText, CheckSquare, BarChart3, Settings, LogOut, Shield, Layout, ChevronDown, List, Activity, PieChart } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { usePermission } from '../hooks/usePermission';
 
@@ -33,13 +33,58 @@ const NavItem = ({ icon: Icon, label, to }: NavItemProps) => (
   </NavLink>
 );
 
+const NavGroup = ({ icon: Icon, label, children, activePathPrefix }: { icon: any, label: string, children: React.ReactNode, activePathPrefix: string }) => {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith(activePathPrefix);
+  const [isOpen, setIsOpen] = useState(isActive);
+
+  return (
+    <div className="flex flex-col">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'flex items-center justify-between px-6 py-3 transition-colors gap-3 border-l-4 w-full',
+          isActive 
+            ? 'text-sidebar-accent-foreground bg-sidebar-accent border-primary' 
+            : 'text-sidebar-foreground border-transparent hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <Icon size={20} className="opacity-70" />
+          <span>{label}</span>
+        </div>
+        <ChevronDown size={16} className={cn("transition-transform duration-200", isOpen ? "rotate-180" : "")} />
+      </button>
+      {isOpen && (
+        <div className="flex flex-col bg-sidebar-accent/30 py-1">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SubNavItem = ({ icon: Icon, label, to }: NavItemProps) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) => cn(
+      'flex items-center pl-14 pr-6 py-2 text-sm transition-colors gap-3',
+      isActive 
+        ? 'text-sidebar-accent-foreground font-medium' 
+        : 'text-sidebar-foreground hover:text-sidebar-accent-foreground'
+    )}
+  >
+    <Icon size={16} className="opacity-70" />
+    {label}
+  </NavLink>
+);
+
 export function Sidebar({ userName, userRole, onLogout }: SidebarProps) {
   const { hasPermission, isAdmin } = usePermission();
 
   const navItems = [
     { icon: LayoutGrid, label: 'Dashboard', to: '/dashboard', show: hasPermission('dashboard') },
     { icon: Users, label: 'Clientes', to: '/dashboard/clients', show: hasPermission('clients') },
-    { icon: Layout, label: 'Kanban', to: '/dashboard/kanban', show: hasPermission('kanban') },
     { icon: MessageSquare, label: 'WhatsApp', to: '/dashboard/whatsapp', show: hasPermission('whatsapp') },
   ].filter(item => item.show);
 
@@ -67,6 +112,16 @@ export function Sidebar({ userName, userRole, onLogout }: SidebarProps) {
         {navItems.map((item) => (
           <NavItem key={`${item.to}-${item.label}`} icon={item.icon} label={item.label} to={item.to} />
         ))}
+        
+        {hasPermission('kanban') && (
+          <NavGroup icon={Layout} label="CRM" activePathPrefix="/dashboard/crm">
+            <SubNavItem icon={LayoutGrid} label="Pipeline" to="/dashboard/crm/pipeline" />
+            <SubNavItem icon={List} label="Lista" to="/dashboard/crm/lista" />
+            <SubNavItem icon={Calendar} label="Agenda" to="/dashboard/crm/agenda" />
+            <SubNavItem icon={Activity} label="Atividades" to="/dashboard/crm/atividades" />
+            <SubNavItem icon={PieChart} label="Relatórios" to="/dashboard/crm/relatorios" />
+          </NavGroup>
+        )}
         
         <div className="px-6 py-3 mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Recursos</div>
         {resourceItems.map((item) => (

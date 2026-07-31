@@ -11,19 +11,16 @@ import {
   Save,
   CreditCard,
   History,
-  Database,
-  Loader2
+  Database
 } from 'lucide-react';
 import { useAuth } from '../../../app/providers/AuthProvider';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
-import { seedDatabase } from '../../../lib/seedService';
 import toast from 'react-hot-toast';
 
 export function SettingsPage() {
-  const { userData, user } = useAuth();
+  const { userData } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,21 +30,6 @@ export function SettingsPage() {
       setLoading(false);
       toast.success('Configurações salvas com sucesso');
     }, 1000);
-  };
-
-  const handleSeed = async () => {
-    if (!user) return;
-    setSeeding(true);
-    try {
-      await seedDatabase(user.uid, user.email || '');
-      toast.success('Banco de dados populado com sucesso! Recarregue a página para ver as mudanças.');
-      // Optional: window.location.reload()
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao popular banco de dados');
-    } finally {
-      setSeeding(false);
-    }
   };
 
   return (
@@ -154,25 +136,7 @@ export function SettingsPage() {
             <Button variant="outline" size="sm">Gerenciar Plano</Button>
           </div>
 
-          {/* Dev Tools Section */}
-          <div className="bg-warning/5 border border-warning/20 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-3 text-warning">
-              <Database size={20} />
-              <h4 className="font-bold">Ferramentas de Desenvolvedor</h4>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Utilize estas ferramentas para testar o sistema com dados reais. Esta ação irá criar perfis de usuário, clientes, tarefas e documentos de exemplo.
-            </p>
-            <Button 
-              onClick={handleSeed} 
-              loading={seeding}
-              variant="outline" 
-              className="border-warning/30 text-warning hover:bg-warning/10"
-            >
-              {seeding ? <Loader2 className="animate-spin mr-2" size={18} /> : <Database className="mr-2" size={18} />}
-              Popular Banco com Dados Reais
-            </Button>
-          </div>
+
         </div>
       </div>
     </div>

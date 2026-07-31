@@ -15,7 +15,7 @@ interface EditPermissionsModalProps {
 const MODULE_LABELS: Record<keyof UserPermissions, string> = {
   dashboard: 'Dashboard / Métricas',
   clients: 'Clientes / CRM',
-  kanban: 'Funil Kanban',
+  kanban: 'CRM / Pipeline',
   whatsapp: 'WhatsApp Integrado',
   calendar: 'Agenda / Calendário',
   documents: 'Documentos / Arquivos',
