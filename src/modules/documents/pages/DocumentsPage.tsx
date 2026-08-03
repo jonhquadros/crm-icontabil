@@ -22,6 +22,7 @@ import { DocumentFile, DocumentFolder } from '../types';
 import { Button } from '../../../shared/components/ui/Button';
 import { CreateFolderModal } from '../components/CreateFolderModal';
 import { cn } from '../../../shared/utils/cn';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -35,6 +36,21 @@ export function DocumentsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
+
+  // Delete confirmation state
+  const [deleteConfirmState, setDeleteConfirmState] = useState<{
+    isOpen: boolean;
+    type: 'file' | 'folder' | null;
+    id: string | null;
+    name: string;
+    loading: boolean;
+  }>({
+    isOpen: false,
+    type: null,
+    id: null,
+    name: '',
+    loading: false
+  });
 
   // Breadcrumbs state
   const [breadcrumbs, setBreadcrumbs] = useState<DocumentFolder[]>([]);
@@ -109,25 +125,50 @@ export function DocumentsPage() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const handleDeleteFile = async (fileId: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este arquivo permanentemente do banco de dados?')) return;
-    try {
-      await documentService.deleteFile(fileId);
-      toast.success('Arquivo excluído com sucesso');
-    } catch (error: any) {
-      console.error(error);
-      toast.error('Erro ao excluir arquivo');
-    }
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    setDeleteConfirmState({
+      isOpen: true,
+      type: 'file',
+      id: fileId,
+      name: fileName,
+      loading: false
+    });
   };
 
-  const handleDeleteFolder = async (folderId: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta pasta permanentemente do banco de dados?')) return;
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    setDeleteConfirmState({
+      isOpen: true,
+      type: 'folder',
+      id: folderId,
+      name: folderName,
+      loading: false
+    });
+  };
+
+  const executeDelete = async () => {
+    const { type, id } = deleteConfirmState;
+    if (!id || !type) return;
+
+    setDeleteConfirmState(prev => ({ ...prev, loading: true }));
     try {
-      await documentService.deleteFolder(folderId);
-      toast.success('Pasta excluída com sucesso');
+      if (type === 'file') {
+        await documentService.deleteFile(id);
+        toast.success('Arquivo excluído com sucesso');
+      } else {
+        await documentService.deleteFolder(id);
+        toast.success('Pasta excluída com sucesso');
+      }
+      setDeleteConfirmState({
+        isOpen: false,
+        type: null,
+        id: null,
+        name: '',
+        loading: false
+      });
     } catch (error: any) {
       console.error(error);
-      toast.error('Erro ao excluir pasta');
+      toast.error(type === 'file' ? 'Erro ao excluir arquivo' : 'Erro ao excluir pasta');
+      setDeleteConfirmState(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -247,7 +288,7 @@ export function DocumentsPage() {
                 <span className="text-xs font-bold text-center line-clamp-2">{folder.name}</span>
                 <div className="absolute top-2 right-2 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }}
                     className="p-1 hover:bg-danger/10 hover:text-danger rounded text-muted-foreground bg-card shadow-sm border border-border"
                     title="Excluir pasta"
                   >
@@ -292,7 +333,7 @@ export function DocumentsPage() {
                     </button>
                   )}
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id); }}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id, file.name); }}
                     className="p-1 hover:bg-danger/10 hover:text-danger rounded text-muted-foreground"
                     title="Excluir"
                   >
@@ -332,7 +373,7 @@ export function DocumentsPage() {
                     <td className="px-6 py-4 text-xs text-muted-foreground">--</td>
                     <td className="px-6 py-4 text-right">
                       <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id, folder.name); }}
                         className="p-1.5 hover:bg-danger/10 hover:text-danger rounded text-muted-foreground transition-colors"
                         title="Excluir pasta"
                       >
@@ -378,7 +419,7 @@ export function DocumentsPage() {
                         </button>
                       )}
                       <button 
-                        onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id); }}
+                        onClick={(e) => { e.stopPropagation(); handleDeleteFile(file.id, file.name); }}
                         className="p-1.5 hover:bg-danger/10 hover:text-danger rounded text-muted-foreground transition-colors"
                         title="Excluir arquivo"
                       >
@@ -398,6 +439,22 @@ export function DocumentsPage() {
         onClose={() => setIsCreateFolderOpen(false)}
         companyId={userData?.companyId || ''}
         currentFolder={currentFolder}
+      />
+
+      <ConfirmModal
+        isOpen={deleteConfirmState.isOpen}
+        onClose={() => setDeleteConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={executeDelete}
+        title={deleteConfirmState.type === 'file' ? 'Excluir Arquivo' : 'Excluir Pasta'}
+        message={
+          deleteConfirmState.type === 'file'
+            ? `Tem certeza que deseja excluir o arquivo "${deleteConfirmState.name}" permanentemente?`
+            : `Tem certeza que deseja excluir a pasta "${deleteConfirmState.name}" e todos os seus arquivos permanentemente?`
+        }
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={deleteConfirmState.loading}
       />
     </div>
   );

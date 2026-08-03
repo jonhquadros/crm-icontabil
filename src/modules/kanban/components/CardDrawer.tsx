@@ -448,12 +448,19 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
   // File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0 || !userData?.companyId) return;
+    if (!card || !files || files.length === 0 || !userData?.companyId) return;
 
     setUploadingDoc(true);
     try {
       const file = files[0];
-      await documentService.uploadFile(file, userData.companyId, null, user?.uid || 'user', card.id);
+      
+      // Determine folder name from the Kanban card client or company registration
+      const folderName = card.companyName?.trim() || card.clientName?.trim() || 'Geral';
+      
+      // Get or create folder
+      const folderId = await documentService.getOrCreateFolderByName(userData.companyId, folderName);
+      
+      await documentService.uploadFile(file, userData.companyId, folderId, user?.uid || 'user', card.id);
 
       await kanbanService.addTimelineEvent(card.id, {
         type: 'document',

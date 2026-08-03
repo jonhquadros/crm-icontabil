@@ -11,6 +11,12 @@ import "dotenv/config";
 const app = express();
 const PORT = 3000;
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`[SERVER_REQ] ${req.method} ${req.url}`);
+  next();
+});
+
 // Configure Cloudinary conditionally
 const cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.VITE_CLOUDINARY_API_KEY || process.env.CLOUDINARY_API_KEY;
@@ -71,12 +77,31 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       }
     }
 
-    // Fallback: Generate a base64 Data URL so upload always succeeds even without Cloudinary keys
-    const mimeType = req.file.mimetype || "application/octet-stream";
-    const base64Data = req.file.buffer.toString("base64");
-    const dataUrl = `data:${mimeType};base64,${base64Data}`;
+    // Fallback: Save file to local uploads directory so we can return a local URL instead of a huge Base64 string that violates Firestore's 1MB limit.
+    try {
+      const uploadsDir = path.join(process.cwd(), "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
 
-    return res.json({ url: dataUrl });
+      // Generate a unique safe filename
+      const safeName = `${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const filePath = path.join(uploadsDir, safeName);
+
+      // Write the buffer to disk
+      await fs.promises.writeFile(filePath, req.file.buffer);
+
+      // Return the relative URL (which is served statically)
+      const fileUrl = `/uploads/${safeName}`;
+      return res.json({ url: fileUrl });
+    } catch (fsError: any) {
+      console.error("Local file saving failed:", fsError);
+      // Absolute fallback if disk writing fails
+      const mimeType = req.file.mimetype || "application/octet-stream";
+      const base64Data = req.file.buffer.toString("base64");
+      const dataUrl = `data:${mimeType};base64,${base64Data}`;
+      return res.json({ url: dataUrl });
+    }
   } catch (error: any) {
     console.error("Erro no upload:", error);
     res.status(500).json({ error: error.message || "Erro interno no servidor" });
@@ -84,6 +109,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 });
 
 async function startServer() {
+  // Serve uploads folder statically
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
