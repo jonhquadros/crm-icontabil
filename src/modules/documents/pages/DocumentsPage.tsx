@@ -245,7 +245,7 @@ export function DocumentsPage() {
                   <Folder size={32} fill="currentColor" className="fill-warning/20" />
                 </div>
                 <span className="text-xs font-bold text-center line-clamp-2">{folder.name}</span>
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
                     className="p-1 hover:bg-danger/10 hover:text-danger rounded text-muted-foreground bg-card shadow-sm border border-border"
@@ -269,7 +269,7 @@ export function DocumentsPage() {
                 <span className="text-[10px] text-muted-foreground mt-1">{formatFileSize(file.size)}</span>
                 
                 {/* Actions overlay */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-card/90 p-1 rounded-lg border border-border shadow-sm">
+                <div className="absolute top-2 right-2 z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-card/90 p-1 rounded-lg border border-border shadow-sm">
                   {file.url ? (
                     <a 
                       href={file.url}

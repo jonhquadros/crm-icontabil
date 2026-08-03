@@ -10,9 +10,11 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
-  deleteDoc
+  deleteDoc,
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
-import { db } from '../../../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../../../lib/firebase';
 import { DocumentFile, DocumentFolder } from '../types';
 
 export const documentService = {
@@ -45,12 +47,16 @@ export const documentService = {
   },
 
   createFolder: async (folderData: Omit<DocumentFolder, 'id' | 'createdAt' | 'updatedAt' | 'active'>) => {
-    return addDoc(collection(db, 'folders'), {
-      ...folderData,
-      active: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    try {
+      return await addDoc(collection(db, 'folders'), {
+        ...folderData,
+        active: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'folders');
+    }
   },
 
   // Files
@@ -85,11 +91,43 @@ export const documentService = {
     );
   },
 
+  subscribeToCardFiles: (companyId: string, cardId: string, callback: (files: DocumentFile[]) => void) => {
+    const q = query(
+      collection(db, 'documents'),
+      where('companyId', '==', companyId),
+      where('cardId', '==', cardId),
+      where('active', '==', true)
+    );
+
+    return onSnapshot(
+      q, 
+      (snapshot) => {
+        const files = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as DocumentFile[];
+
+        files.sort((a, b) => {
+          const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
+          const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
+          return timeB - timeA;
+        });
+
+        callback(files);
+      },
+      (error) => {
+        console.error("Error subscribing to card files:", error);
+        callback([]);
+      }
+    );
+  },
+
   uploadFile: async (
     file: File, 
     companyId: string, 
     folderId: string | null,
-    userId: string
+    userId: string,
+    cardId?: string | null
   ) => {
     try {
       // 1. Upload via backend to Cloudinary (or fallback Data URL)
@@ -114,6 +152,7 @@ export const documentService = {
       return await addDoc(collection(db, 'documents'), {
         companyId,
         folderId: folderId || null,
+        cardId: cardId || null,
         name: file.name,
         size: file.size,
         type: file.type,
@@ -131,12 +170,32 @@ export const documentService = {
   },
 
   deleteFile: async (fileId: string) => {
-    const fileRef = doc(db, 'documents', fileId);
-    return deleteDoc(fileRef);
+    try {
+      const fileRef = doc(db, 'documents', fileId);
+      return await deleteDoc(fileRef);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `documents/${fileId}`);
+    }
   },
 
   deleteFolder: async (folderId: string) => {
-    const folderRef = doc(db, 'folders', folderId);
-    return deleteDoc(folderRef);
+    try {
+      // Delete all files in this folder
+      const filesQuery = query(collection(db, 'documents'), where('folderId', '==', folderId));
+      const filesSnapshot = await getDocs(filesQuery);
+      
+      const batch = writeBatch(db);
+      filesSnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      // Also delete the folder itself
+      const folderRef = doc(db, 'folders', folderId);
+      batch.delete(folderRef);
+
+      return await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `folders/${folderId}`);
+    }
   }
 };

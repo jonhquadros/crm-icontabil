@@ -14,6 +14,7 @@ import { db } from '../../../lib/firebase';
 import { writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { KanbanCard, KanbanColumn, Pipeline, PipelineColumn } from '../../clients/types';
 import { Button } from '../../../shared/components/ui/Button';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { AddCardModal } from '../components/AddCardModal';
 import { CRMHeader } from '../components/CRMHeader';
 import { KanbanCardItem } from '../components/KanbanCardItem';
@@ -53,6 +54,21 @@ export function KanbanPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManagePipelinesOpen, setIsManagePipelinesOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState<KanbanCard | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [cardIdsToDelete, setCardIdsToDelete] = useState<string[]>([]);
+
+  const confirmDelete = (ids: string[]) => {
+    setCardIdsToDelete(ids);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleteModalOpen(false);
+    if (cardIdsToDelete.length > 0) {
+      await handleBulkDelete(cardIdsToDelete);
+      setCardIdsToDelete([]);
+    }
+  };
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -482,7 +498,7 @@ export function KanbanPage() {
             columns={currentColumns}
             onSelectCard={(card) => setSelectedCard(card)}
             onBulkMove={handleBulkMove}
-            onBulkDelete={handleBulkDelete}
+            onBulkDelete={confirmDelete}
             onBulkResponsible={() => {}}
           />
         </div>
@@ -521,11 +537,7 @@ export function KanbanPage() {
                             card={card} 
                             index={index} 
                             onClick={() => setSelectedCard(card)} 
-                            onDelete={() => {
-                              if (window.confirm('Tem certeza de que deseja excluir permanentemente esta oportunidade?')) {
-                                handleBulkDelete([card.id]);
-                              }
-                            }}
+                            onDelete={() => confirmDelete([card.id])}
                           />
                         ))}
                         {provided.placeholder}
@@ -544,6 +556,17 @@ export function KanbanPage() {
         isOpen={!!selectedCard}
         onClose={() => setSelectedCard(null)}
         columns={currentColumns}
+      />
+
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title={cardIdsToDelete.length > 1 ? "Excluir Oportunidades" : "Excluir Oportunidade"}
+        message={cardIdsToDelete.length > 1 
+          ? `Tem certeza que deseja excluir permanentemente estas ${cardIdsToDelete.length} oportunidades?`
+          : "Tem certeza que deseja excluir esta oportunidade permanentemente?"
+        }
       />
     </div>
   );

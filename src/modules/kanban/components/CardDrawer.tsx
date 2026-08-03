@@ -39,6 +39,7 @@ import { Badge } from '../../../shared/components/ui/Badge';
 import { Avatar } from '../../../shared/components/ui/Avatar';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { KanbanCard, ChecklistItem, NoteItem, TimelineEvent } from '../../clients/types';
 import { kanbanService } from '../services/kanbanService';
 import { documentService } from '../../documents/services/documentService';
@@ -71,6 +72,8 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
   const [activeTab, setActiveTab] = useState('resumo');
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<any | null>(null);
 
   // Edit Form State
   const [editForm, setEditForm] = useState({
@@ -150,7 +153,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
   // Subscribe to documents
   useEffect(() => {
     if (!card || !userData?.companyId) return;
-    const unsub = documentService.subscribeToFiles(userData.companyId, null, (files) => {
+    const unsub = documentService.subscribeToCardFiles(userData.companyId, card.id, (files) => {
       setDocuments(files);
     });
     return () => unsub();
@@ -260,7 +263,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
 
   // Delete Card
   const handleDeleteCard = async () => {
-    if (!confirm('Tem certeza que deseja excluir esta oportunidade?')) return;
+    if (!card) return;
     try {
       await kanbanService.deleteCard(card.id);
       toast.success('Card excluído com sucesso');
@@ -268,6 +271,26 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
     } catch (err) {
       console.error(err);
       toast.error('Erro ao excluir card');
+    }
+  };
+
+  // Delete File
+  const handleDeleteFile = async () => {
+    if (!fileToDelete || !card) return;
+    try {
+      await documentService.deleteFile(fileToDelete.id);
+      
+      // Decrement documentsCount of the card
+      await kanbanService.updateCard(card.id, {
+        documentsCount: Math.max(0, (card.documentsCount || 0) - 1)
+      });
+
+      toast.success('Arquivo excluído com sucesso');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao excluir arquivo');
+    } finally {
+      setFileToDelete(null);
     }
   };
 
@@ -430,7 +453,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
     setUploadingDoc(true);
     try {
       const file = files[0];
-      await documentService.uploadFile(file, userData.companyId, null, user?.uid || 'user');
+      await documentService.uploadFile(file, userData.companyId, null, user?.uid || 'user', card.id);
 
       await kanbanService.addTimelineEvent(card.id, {
         type: 'document',
@@ -482,7 +505,8 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       {/* Header do Drawer */}
       <SheetHeader className="pb-4 border-b border-border bg-muted/20 -mx-6 px-6 pt-6 mb-2">
         <div className="flex justify-between items-start gap-4">
@@ -543,7 +567,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                     </button>
                     <div className="h-px bg-border my-1" />
                     <button 
-                      onClick={() => { setShowMenu(false); handleDeleteCard(); }}
+                      onClick={() => { setShowMenu(false); setIsDeleteModalOpen(true); }}
                       className="w-full text-left px-3 py-2 text-xs text-danger hover:bg-danger/10 flex items-center gap-2"
                     >
                       <Trash2 size={14} /> Excluir Oportunidade
@@ -1036,14 +1060,22 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                       <Paperclip size={14} className="text-primary shrink-0" />
                       <span className="font-medium truncate">{doc.name}</span>
                     </div>
-                    <a 
-                      href={doc.url} 
-                      target="_blank" 
-                      rel="noreferrer" 
-                      className="text-xs text-primary hover:underline shrink-0"
-                    >
-                      Visualizar
-                    </a>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <a 
+                        href={doc.url} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Visualizar
+                      </a>
+                      <button 
+                        onClick={() => setFileToDelete(doc)}
+                        className="text-xs text-danger hover:underline"
+                      >
+                        Excluir
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -1187,5 +1219,22 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
         </SheetContent>
       </Tabs>
     </Sheet>
-  );
+
+    <ConfirmModal
+      isOpen={isDeleteModalOpen}
+      onClose={() => setIsDeleteModalOpen(false)}
+      onConfirm={handleDeleteCard}
+      title="Excluir Oportunidade"
+      message="Tem certeza que deseja excluir esta oportunidade permanentemente?"
+    />
+
+    <ConfirmModal
+      isOpen={!!fileToDelete}
+      onClose={() => setFileToDelete(null)}
+      onConfirm={handleDeleteFile}
+      title="Excluir Arquivo"
+      message={`Tem certeza que deseja excluir o arquivo "${fileToDelete?.name}" permanentemente do banco de dados?`}
+    />
+  </>
+);
 }

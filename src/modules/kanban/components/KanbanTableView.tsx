@@ -128,10 +128,8 @@ export function KanbanTableView({
               size="sm" 
               className="h-7 text-xs gap-1"
               onClick={() => {
-                if (confirm(`Deseja excluir ${selectedIds.length} oportunidades?`)) {
-                  onBulkDelete(selectedIds);
-                  setSelectedIds([]);
-                }
+                onBulkDelete(selectedIds);
+                setSelectedIds([]);
               }}
             >
               <Trash2 size={12} /> Excluir

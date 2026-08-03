@@ -23,6 +23,7 @@ export interface DocumentFile {
   url: string;
   category: FileCategory;
   clientId?: string; // Optional link to a client
+  cardId?: string | null; // Optional link to a Kanban card
   uploadedBy: string;
   active: boolean;
   createdAt: Timestamp;
