@@ -25,11 +25,12 @@ interface KanbanCardItemProps {
   key?: React.Key;
   onClick?: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
 }
 
 const DraggableComponent = Draggable as any;
 
-export function KanbanCardItem({ card, index, onClick, onDelete }: KanbanCardItemProps) {
+export function KanbanCardItem({ card, index, onClick, onDelete, onEdit }: KanbanCardItemProps) {
   const [showMenu, setShowMenu] = useState(false);
 
   const getPriorityColor = (priority: string) => {
@@ -106,7 +107,14 @@ export function KanbanCardItem({ card, index, onClick, onDelete }: KanbanCardIte
                     onClick={(e) => { stopPropagation(e); setShowMenu(false); }}
                   />
                   <div className="absolute right-0 top-full mt-1 w-36 bg-card border border-border rounded-md shadow-lg z-50 py-1 overflow-hidden">
-                    <button className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2">
+                    <button 
+                      onClick={(e) => {
+                        stopPropagation(e);
+                        setShowMenu(false);
+                        if (onEdit) onEdit();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
+                    >
                       <Edit2 size={12} /> Editar
                     </button>
                     <button className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2">

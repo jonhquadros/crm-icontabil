@@ -142,7 +142,7 @@ export function CRMListPage() {
   );
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
+    <div className="h-[calc(100vh-190px)] flex flex-col gap-4">
       <CRMHeader 
         cards={cards} 
         onAddCard={() => setIsAddModalOpen(true)}

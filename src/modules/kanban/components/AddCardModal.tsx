@@ -49,7 +49,8 @@ export function AddCardModal({ isOpen, onClose, companyId, userId, pipelineId }:
         updatedAt: serverTimestamp(),
         stuckSince: serverTimestamp(),
         lastInteraction: serverTimestamp(),
-        createdBy: userId,
+        createdBy: creatorName,
+        createdById: userId,
       });
       toast.success('Card criado com sucesso!');
       onClose();

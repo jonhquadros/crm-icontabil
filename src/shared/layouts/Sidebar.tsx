@@ -8,6 +8,9 @@ interface SidebarProps {
   userName: string;
   userRole: string;
   onLogout: () => void;
+  isOpen: boolean;
+  isDrawer?: boolean;
+  onClose?: () => void;
 }
 
 interface NavItemProps {
@@ -79,7 +82,7 @@ const SubNavItem = ({ icon: Icon, label, to }: NavItemProps) => (
   </NavLink>
 );
 
-export function Sidebar({ userName, userRole, onLogout }: SidebarProps) {
+export function Sidebar({ userName, userRole, onLogout, isOpen, isDrawer, onClose }: SidebarProps) {
   const { hasPermission, isAdmin } = usePermission();
 
   const navItems = [
@@ -98,7 +101,15 @@ export function Sidebar({ userName, userRole, onLogout }: SidebarProps) {
   ].filter(item => item.show);
 
   return (
-    <aside className="w-64 bg-sidebar flex flex-col border-r border-border text-sidebar-foreground h-full shrink-0">
+    <aside className={cn(
+      "bg-sidebar flex flex-col border-r border-border text-sidebar-foreground h-full shrink-0 transition-all duration-300",
+      isDrawer ? "fixed inset-y-0 left-0 z-50 shadow-2xl" : "relative",
+      isDrawer && !isOpen ? "-translate-x-full" : "translate-x-0",
+      isOpen ? "w-64" : "w-16"
+    )}>
+      {isDrawer && isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      )}
       <div className="p-6 flex items-center gap-3 border-b border-sidebar-accent/50">
         <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center text-white font-extrabold text-lg shadow-lg shadow-primary/20">iC</div>
         <div className="flex flex-col">

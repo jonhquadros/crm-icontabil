@@ -48,12 +48,14 @@ import { useAuth } from '../../../app/providers/AuthProvider';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
+import { getFormattedUserName } from '../../../shared/utils/userUtils';
 
 interface CardDrawerProps {
   card: KanbanCard | null;
   isOpen: boolean;
   onClose: () => void;
   columns: { id: string; label: string; color: string }[];
+  initialEditMode?: boolean;
 }
 
 const DEFAULT_CHECKLIST_MODEL: { title: string }[] = [
@@ -67,7 +69,7 @@ const DEFAULT_CHECKLIST_MODEL: { title: string }[] = [
   { title: 'Alvará de Funcionamento / Licenças' },
 ];
 
-export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) {
+export function CardDrawer({ card, isOpen, onClose, columns, initialEditMode }: CardDrawerProps) {
   const { user, userData } = useAuth();
   const [activeTab, setActiveTab] = useState('resumo');
   const [showMenu, setShowMenu] = useState(false);
@@ -137,8 +139,9 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
         addressCity: isAddrObj ? (addr.city || '') : '',
         addressState: isAddrObj ? (addr.state || '') : '',
       });
+      setIsEditing(initialEditMode || false);
     }
-  }, [card, user]);
+  }, [card, user, initialEditMode]);
 
   // Subscribe to tasks linked to this card/client
   useEffect(() => {
@@ -358,7 +361,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
     if (!newNoteText.trim()) return;
 
     try {
-      const author = user?.email || 'Usuário';
+      const author = userData?.name || user?.displayName || user?.email?.split('@')[0] || 'Administrador';
       await kanbanService.addNote(card.id, newNoteText.trim(), author, card.notesList);
       await kanbanService.addTimelineEvent(card.id, {
         type: 'note',
@@ -381,6 +384,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
     if (!newTaskTitle.trim() || !userData?.companyId) return;
 
     try {
+      const creatorName = userData?.name || user?.displayName || user?.email?.split('@')[0] || 'Administrador';
       await taskService.createTask({
         companyId: userData.companyId,
         title: `${newTaskTitle.trim()} - (${card.clientName})`,
@@ -388,14 +392,14 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
         priority: newTaskPriority,
         dueDate: newTaskDueDate ? (new Date(newTaskDueDate) as any) : null,
         clientId: card.id,
-        createdBy: user?.uid || 'user'
+        createdBy: creatorName
       });
 
       await kanbanService.addTimelineEvent(card.id, {
         type: 'task',
         title: 'Nova tarefa criada',
         description: `Tarefa: ${newTaskTitle.trim()}`,
-        author: user?.email || 'Usuário'
+        author: creatorName
       }, card.timeline);
 
       // Increment tasks counter on card
@@ -488,7 +492,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
     type: 'created',
     title: 'Cliente / Oportunidade Criada',
     description: `Lead cadastrado na etapa "${column?.label || card.column}"`,
-    author: card.createdBy || 'Sistema',
+    author: getFormattedUserName(card.createdBy || card.responsible, [], userData),
     createdAt: card.createdAt?.toDate ? card.createdAt.toDate().toISOString() : new Date().toISOString()
   };
 
@@ -905,7 +909,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
                       </div>
                       <p className="text-muted-foreground">{evt.description}</p>
                       <div className="mt-2 text-[10px] text-muted-foreground/80 flex items-center gap-1">
-                        <User size={10} /> por <span className="font-medium text-foreground">{evt.author}</span>
+                        <User size={10} /> por <span className="font-medium text-foreground">{getFormattedUserName(evt.author, [], userData)}</span>
                       </div>
                     </div>
                   </div>
@@ -1207,7 +1211,7 @@ export function CardDrawer({ card, isOpen, onClose, columns }: CardDrawerProps) 
               </div>
               <div className="flex justify-between py-1.5 border-b border-border/50">
                 <span className="text-muted-foreground">Criado por:</span>
-                <span className="font-medium">{card.createdBy || 'Sistema'}</span>
+                <span className="font-medium">{getFormattedUserName(card.createdBy, [], userData)}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-border/50">
                 <span className="text-muted-foreground">Data de Criação:</span>

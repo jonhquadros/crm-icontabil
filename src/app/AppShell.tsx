@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useNavigate, Outlet } from 'react-router-dom';
@@ -11,9 +12,12 @@ import { useAuth } from './providers/AuthProvider';
 import { Sidebar } from '../shared/layouts/Sidebar';
 import { Header } from '../shared/layouts/Header';
 import { Button } from '../shared/components/ui/Button';
+import { BottomNav } from '../shared/components/BottomNav';
 import '../styles/globals.css';
 
 export default function AppShell() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const { userData, user, loading } = useAuth();
 
@@ -42,14 +46,30 @@ export default function AppShell() {
 
   return (
     <div className="flex h-screen w-full bg-background font-sans text-foreground overflow-hidden">
-      <Sidebar 
-        userName={userName}
-        userRole={userRole}
-        onLogout={handleLogout}
-      />
+      {/* Mobile/Tablet Drawer Sidebar */}
+      <div className="lg:hidden">
+        <Sidebar 
+          userName={userName}
+          userRole={userRole}
+          onLogout={handleLogout}
+          isOpen={sidebarDrawerOpen}
+          isDrawer
+          onClose={() => setSidebarDrawerOpen(false)}
+        />
+      </div>
+
+      {/* Desktop Fixed Sidebar */}
+      <div className="hidden lg:block h-full">
+        <Sidebar 
+          userName={userName}
+          userRole={userRole}
+          onLogout={handleLogout}
+          isOpen={sidebarOpen}
+        />
+      </div>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <Header />
+        <Header onToggleSidebar={() => setSidebarDrawerOpen(!sidebarDrawerOpen)} />
 
         {/* Diagnostic Warning for missing profile */}
         {!loading && user && !userData && (
@@ -66,11 +86,13 @@ export default function AppShell() {
         )}
 
         {/* Content Area */}
-        <div className="p-8 flex-1 overflow-y-auto">
+        <div className="p-4 lg:p-8 flex-1 overflow-y-auto pb-20 lg:pb-8">
           <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>
         </div>
+
+        <BottomNav />
 
         {/* Footer */}
         <footer className="h-12 border-t border-border bg-card flex items-center justify-between px-8 text-[10px] font-bold text-muted-foreground shrink-0">

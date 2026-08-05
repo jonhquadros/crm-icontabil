@@ -1,10 +1,13 @@
 import React from 'react';
-import { Bell, Search, Settings } from 'lucide-react';
+import { Bell, Search, Settings, Layout } from 'lucide-react';
 
-export function Header() {
+export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-8 shrink-0">
+    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 shrink-0">
       <div className="flex items-center gap-4 flex-1">
+        <button className="lg:hidden" onClick={onToggleSidebar}>
+          <Layout className="text-muted-foreground" size={20} />
+        </button>
         <div className="relative max-w-md w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
           <input 
@@ -23,7 +26,6 @@ export function Header() {
         <div className="h-8 w-[1px] bg-border"></div>
         <div className="flex items-center gap-2">
           <Settings className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" size={20} />
-          <span className="text-sm text-muted-foreground font-medium">Status: <span className="text-success font-bold">CONECTADO</span></span>
         </div>
       </div>
     </header>

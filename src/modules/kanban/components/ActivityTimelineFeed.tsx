@@ -18,6 +18,8 @@ import { Select } from '../../../shared/components/ui/Select';
 import { Input } from '../../../shared/components/ui/Input';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { cn } from '../../../shared/utils/cn';
+import { useAuth } from '../../../app/providers/AuthProvider';
+import { getFormattedUserName } from '../../../shared/utils/userUtils';
 
 interface ActivityTimelineFeedProps {
   cards: KanbanCard[];
@@ -25,6 +27,7 @@ interface ActivityTimelineFeedProps {
 }
 
 export function ActivityTimelineFeed({ cards = [], onSelectCard }: ActivityTimelineFeedProps) {
+  const { userData } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState('all');
   const [selectedType, setSelectedType] = useState('all');
@@ -42,7 +45,7 @@ export function ActivityTimelineFeed({ cards = [], onSelectCard }: ActivityTimel
           type: 'created',
           title: `Oportunidade Criada: ${card.clientName}`,
           description: `Lead cadastrado na etapa "${card.column}" (${card.companyName || 'Empresa não informada'})`,
-          author: card.createdBy || card.responsible || 'Sistema',
+          author: getFormattedUserName(card.createdBy || card.responsible, [], userData),
           createdAt: card.createdAt?.toDate ? card.createdAt.toDate().toISOString() : new Date().toISOString(),
           card
         });
@@ -203,7 +206,7 @@ export function ActivityTimelineFeed({ cards = [], onSelectCard }: ActivityTimel
                   </div>
                   <p className="text-muted-foreground leading-relaxed">{evt.description}</p>
                   <div className="mt-3 text-[10px] text-muted-foreground/80 flex items-center gap-1">
-                    <User size={10} /> Registrado por <span className="font-medium text-foreground">{evt.author}</span>
+                    <User size={10} /> Registrado por <span className="font-medium text-foreground">{getFormattedUserName(evt.author, [], userData)}</span>
                   </div>
                 </div>
               </div>

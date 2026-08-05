@@ -53,9 +53,43 @@ export function KanbanPage() {
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManagePipelinesOpen, setIsManagePipelinesOpen] = useState(false);
+  const [pipelineModalConfig, setPipelineModalConfig] = useState<{
+    initialView: 'list' | 'create' | 'edit';
+    initialPipelineId: string | null;
+    initialDelete: boolean;
+  }>({
+    initialView: 'list',
+    initialPipelineId: null,
+    initialDelete: false
+  });
+
+  const handleConfigurePipelines = (
+    initialView: 'list' | 'create' | 'edit' = 'list',
+    pipelineId: string | null = null,
+    initialDelete: boolean = false
+  ) => {
+    setPipelineModalConfig({
+      initialView,
+      initialPipelineId: pipelineId,
+      initialDelete
+    });
+    setIsManagePipelinesOpen(true);
+  };
+
   const [selectedCard, setSelectedCard] = useState<KanbanCard | null>(null);
+  const [cardDrawerEditMode, setCardDrawerEditMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [cardIdsToDelete, setCardIdsToDelete] = useState<string[]>([]);
+
+  const handleSelectCard = (card: KanbanCard) => {
+    setCardDrawerEditMode(false);
+    setSelectedCard(card);
+  };
+
+  const handleEditCard = (card: KanbanCard) => {
+    setCardDrawerEditMode(true);
+    setSelectedCard(card);
+  };
 
   const confirmDelete = (ids: string[]) => {
     setCardIdsToDelete(ids);
@@ -284,7 +318,7 @@ export function KanbanPage() {
               active: true,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
-              createdBy: user?.uid || 'system'
+              createdBy: userData?.name || user?.displayName || user?.email?.split('@')[0] || 'Sistema'
             });
 
             pipe.columns.forEach((col) => {
@@ -301,7 +335,7 @@ export function KanbanPage() {
                 active: true,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-                createdBy: user?.uid || 'system'
+                createdBy: userData?.name || user?.displayName || user?.email?.split('@')[0] || 'Sistema'
               });
             });
           });
@@ -411,14 +445,14 @@ export function KanbanPage() {
   const currentColumns = currentPipeline?.columns?.sort((a, b) => a.order - b.order) || DEFAULT_COLUMNS;
 
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col gap-4">
+    <div className="h-[calc(100vh-190px)] flex flex-col gap-4">
       <CRMHeader 
         cards={cards} 
         onAddCard={() => setIsAddModalOpen(true)}
         pipelines={pipelines}
         selectedPipelineId={selectedPipelineId}
         onPipelineChange={setSelectedPipelineId}
-        onConfigurePipelines={() => setIsManagePipelinesOpen(true)}
+        onConfigurePipelines={handleConfigurePipelines}
         viewMode={viewMode}
         onViewModeChange={handleViewModeChange}
         searchTerm={searchTerm}
@@ -445,6 +479,9 @@ export function KanbanPage() {
         companyId={userData?.companyId || ''}
         userId={user?.uid || ''}
         onPipelineCreated={(newId) => setSelectedPipelineId(newId)}
+        initialView={pipelineModalConfig.initialView}
+        initialPipelineId={pipelineModalConfig.initialPipelineId}
+        initialDelete={pipelineModalConfig.initialDelete}
       />
 
       <FilterModal
@@ -471,7 +508,7 @@ export function KanbanPage() {
           <CRMAgendaView
             cards={cards}
             tasks={tasks}
-            onSelectCard={(card) => setSelectedCard(card)}
+            onSelectCard={handleSelectCard}
             onSelectTask={(task) => {}}
             onAddTask={() => {}}
           />
@@ -480,7 +517,7 @@ export function KanbanPage() {
         <div className="flex-1 overflow-y-auto pb-4">
           <ActivityTimelineFeed
             cards={cards}
-            onSelectCard={(card) => setSelectedCard(card)}
+            onSelectCard={handleSelectCard}
           />
         </div>
       ) : viewMode === 'reports' ? (
@@ -496,7 +533,7 @@ export function KanbanPage() {
           <KanbanTableView
             cards={filteredCards}
             columns={currentColumns}
-            onSelectCard={(card) => setSelectedCard(card)}
+            onSelectCard={handleSelectCard}
             onBulkMove={handleBulkMove}
             onBulkDelete={confirmDelete}
             onBulkResponsible={() => {}}
@@ -536,8 +573,9 @@ export function KanbanPage() {
                             key={card.id} 
                             card={card} 
                             index={index} 
-                            onClick={() => setSelectedCard(card)} 
+                            onClick={() => handleSelectCard(card)} 
                             onDelete={() => confirmDelete([card.id])}
+                            onEdit={() => handleEditCard(card)}
                           />
                         ))}
                         {provided.placeholder}
@@ -556,6 +594,7 @@ export function KanbanPage() {
         isOpen={!!selectedCard}
         onClose={() => setSelectedCard(null)}
         columns={currentColumns}
+        initialEditMode={cardDrawerEditMode}
       />
 
       <ConfirmModal

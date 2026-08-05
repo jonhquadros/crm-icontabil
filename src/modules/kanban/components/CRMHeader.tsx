@@ -7,7 +7,9 @@ import {
   Briefcase,
   Users,
   MessageCircle,
-  CheckSquare
+  CheckSquare,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
@@ -26,7 +28,7 @@ interface CRMHeaderProps {
   pipelines: Pipeline[];
   selectedPipelineId: string | null;
   onPipelineChange: (id: string) => void;
-  onConfigurePipelines?: () => void;
+  onConfigurePipelines?: (initialView?: 'list' | 'create' | 'edit', pipelineId?: string | null, initialDelete?: boolean) => void;
   viewMode?: 'kanban' | 'list' | 'agenda' | 'activities' | 'reports';
   onViewModeChange?: (mode: 'kanban' | 'list' | 'agenda' | 'activities' | 'reports') => void;
   searchTerm?: string;
@@ -117,16 +119,39 @@ export function CRMHeader({
       {/* Linha 2 — Ações e filtros */}
       <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between bg-card p-3 rounded-lg border border-border shadow-sm">
         <div className="flex items-center gap-3 flex-wrap flex-1">
-          <Select 
-            value={selectedPipelineId || 'default'} 
-            onChange={(e) => onPipelineChange(e.target.value)}
-            className="w-48 bg-background"
-          >
-            {pipelines.length === 0 && <option value="default">Pipeline Padrão</option>}
-            {pipelines.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </Select>
+          <div className="flex items-center gap-1.5">
+            <Select 
+              value={selectedPipelineId || 'default'} 
+              onChange={(e) => onPipelineChange(e.target.value)}
+              className="w-48 bg-background"
+            >
+              {pipelines.length === 0 && <option value="default">Pipeline Padrão</option>}
+              {pipelines.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </Select>
+
+            {selectedPipelineId && selectedPipelineId !== 'default' && isAdmin && onConfigurePipelines && (
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onConfigurePipelines('edit', selectedPipelineId)}
+                  className="p-2 hover:bg-primary/10 hover:text-primary text-muted-foreground rounded-lg border border-border bg-background transition-colors h-9 w-9 flex items-center justify-center"
+                  title="Editar pipeline atual"
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onConfigurePipelines('list', selectedPipelineId, true)}
+                  className="p-2 hover:bg-danger/10 hover:text-danger text-muted-foreground rounded-lg border border-border bg-background transition-colors h-9 w-9 flex items-center justify-center"
+                  title="Excluir pipeline atual"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
           
           <Select 
             value={selectedResponsible} 
@@ -218,7 +243,7 @@ export function CRMHeader({
           </Button>
           
           {isAdmin && (
-            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={onConfigurePipelines}>
+            <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => onConfigurePipelines('list')}>
               <Settings size={16} />
               Configurar Pipeline
             </Button>
