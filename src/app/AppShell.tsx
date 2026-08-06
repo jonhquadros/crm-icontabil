@@ -98,12 +98,8 @@ export default function AppShell() {
         <footer className="h-12 border-t border-border bg-card flex items-center justify-between px-8 text-[10px] font-bold text-muted-foreground shrink-0">
           <div className="flex gap-6 uppercase tracking-widest">
             <span>v. 2.0.0 — ARQUITETURA SAAS</span>
-            <span>DEV MODE</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span>
-            <span className="uppercase tracking-widest">SERVER STATUS: OK</span>
-          </div>
+
         </footer>
       </main>
     </div>

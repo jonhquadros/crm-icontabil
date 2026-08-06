@@ -23,7 +23,12 @@ export function usePermission() {
 
     const permissions = userData?.permissions;
     if (!permissions) {
-      console.warn(`Permission check for ${module}:${action} failed: No permissions object found for role ${role}.`);
+      if (role === 'viewer') {
+        return action === 'view';
+      }
+      if (role === 'operator') {
+        return action !== 'delete' && module !== 'users';
+      }
       return false;
     }
 

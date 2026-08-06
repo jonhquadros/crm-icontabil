@@ -1,7 +1,10 @@
 import React from 'react';
 import { Bell, Search, Settings, Layout } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+  const navigate = useNavigate();
+
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-8 shrink-0">
       <div className="flex items-center gap-4 flex-1">
@@ -25,7 +28,16 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
         </div>
         <div className="h-8 w-[1px] bg-border"></div>
         <div className="flex items-center gap-2">
-          <Settings className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors" size={20} />
+          <button 
+            type="button"
+            onClick={() => navigate('/dashboard/settings')}
+            title="Configurações"
+            aria-label="Configurações"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+            id="header-settings-button"
+          >
+            <Settings size={20} />
+          </button>
         </div>
       </div>
     </header>

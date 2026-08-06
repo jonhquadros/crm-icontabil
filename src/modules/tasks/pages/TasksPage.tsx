@@ -18,10 +18,12 @@ import {
 } from 'lucide-react';
 import { taskService } from '../services/taskService';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { Task, TaskPriority, TaskStatus } from '../types';
 import { Button } from '../../../shared/components/ui/Button';
 import { AddTaskModal } from '../components/AddTaskModal';
 import { EditTaskModal } from '../components/EditTaskModal';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { cn } from '../../../shared/utils/cn';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -29,6 +31,11 @@ import toast from 'react-hot-toast';
 
 export function TasksPage() {
   const { userData, user } = useAuth();
+  const { hasPermission } = usePermission();
+
+  const canCreate = hasPermission('tasks', 'create') || hasPermission('calendar', 'create');
+  const canEdit = hasPermission('tasks', 'edit') || hasPermission('calendar', 'edit');
+  const canDelete = hasPermission('tasks', 'delete') || hasPermission('calendar', 'delete');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [view, setView] = useState<'list' | 'calendar'>('list');
   const [loading, setLoading] = useState(true);
@@ -36,6 +43,8 @@ export function TasksPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!userData?.companyId) return;
@@ -73,14 +82,22 @@ export function TasksPage() {
     t.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteTask = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+  const handleDeleteTask = (task: Task) => {
+    setTaskToDelete(task);
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    setIsDeleting(true);
     try {
-      await taskService.deleteTask(id);
+      await taskService.deleteTask(taskToDelete.id);
       toast.success('Tarefa removida com sucesso');
+      setTaskToDelete(null);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao excluir tarefa');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -113,10 +130,12 @@ export function TasksPage() {
               <CalendarIcon size={18} />
             </button>
           </div>
-          <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
-            <Plus size={18} />
-            Nova Tarefa
-          </Button>
+          {canCreate && (
+            <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
+              <Plus size={18} />
+              Nova Tarefa
+            </Button>
+          )}
         </div>
       </div>
 
@@ -177,9 +196,10 @@ export function TasksPage() {
                     <tr key={task.id} className={cn("hover:bg-muted/30 transition-colors group", task.status === 'completed' && "opacity-60")}>
                       <td className="px-6 py-4">
                         <button 
+                          disabled={!canEdit}
                           onClick={() => handleToggleStatus(task)}
                           className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed",
                             task.status === 'completed' ? "bg-success border-success text-white" : "border-border hover:border-primary"
                           )}
                         >
@@ -205,23 +225,29 @@ export function TasksPage() {
                           {task.dueDate ? format(task.dueDate?.toDate?.() || new Date(), 'dd/MM/yyyy HH:mm') : 'Sem data'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => setEditingTask(task)}
-                            className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-muted-foreground hover:text-primary"
-                            title="Editar Tarefa"
-                          >
-                            <Pencil size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="p-2 hover:bg-danger/10 rounded-lg transition-colors text-muted-foreground hover:text-danger"
-                            title="Excluir Tarefa"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
+                      <td className="px-6 py-4 text-right font-medium">
+                        {(canEdit || canDelete) && (
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {canEdit && (
+                              <button 
+                                onClick={() => setEditingTask(task)}
+                                className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                                title="Editar Tarefa"
+                              >
+                                <Pencil size={18} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button 
+                                onClick={() => handleDeleteTask(task)}
+                                className="p-2 hover:bg-danger/10 rounded-lg transition-colors text-muted-foreground hover:text-danger"
+                                title="Excluir Tarefa"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -311,6 +337,18 @@ export function TasksPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleConfirmDeleteTask}
+        title="Excluir Tarefa"
+        message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

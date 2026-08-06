@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-icontbilcrm-de92964b-7674-429e-b588-c2b5d8da928d",
+      "rules": "firestore.rules"
+    }
+  ]
+}

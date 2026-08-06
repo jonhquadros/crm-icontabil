@@ -8,6 +8,9 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, icon, children, ...props }, ref) => {
+    const isControlled = 'value' in props;
+    const value = isControlled ? (props.value ?? '') : undefined;
+
     return (
       <div className="relative inline-flex items-center">
         {icon && (
@@ -23,6 +26,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             className
           )}
           {...props}
+          value={value}
         >
           {children}
         </select>

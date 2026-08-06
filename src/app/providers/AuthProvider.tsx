@@ -42,20 +42,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Auto-create profile for test/admin emails if missing
               const email = firebaseUser.email.toLowerCase();
               if (email === 'teste@teste.com' || email === 'jonhquadros@gmail.com') {
+                const isJonh = email === 'jonhquadros@gmail.com';
                 const newUserData = {
                   name: firebaseUser.displayName || email.split('@')[0],
                   email: email,
-                  role: 'admin',
+                  role: isJonh ? 'viewer' : 'admin',
                   companyId: 'comp_default',
                   companyName: 'iContábil CRM',
                   active: true,
-                  permissions: {
-                    dashboard: { view: true },
+                  permissions: isJonh ? {
+                    dashboard: { view: true, create: false, edit: false, delete: false },
+                    clients: { view: true, create: false, edit: false, delete: false },
+                    kanban: { view: true, create: false, edit: false, delete: false },
+                    whatsapp: { view: true, create: false, edit: false, delete: false },
+                    calendar: { view: true, create: false, edit: false, delete: false },
+                    documents: { view: true, create: false, edit: false, delete: false },
+                    tasks: { view: true, create: false, edit: false, delete: false },
+                    reports: { view: true, create: false, edit: false, delete: false },
+                    users: { view: false, create: false, edit: false, delete: false },
+                    campaigns: { view: true, create: false, edit: false, delete: false }
+                  } : {
+                    dashboard: { view: true, create: true, edit: true, delete: true },
                     clients: { view: true, create: true, edit: true, delete: true },
+                    kanban: { view: true, create: true, edit: true, delete: true },
+                    whatsapp: { view: true, create: true, edit: true, delete: true },
+                    calendar: { view: true, create: true, edit: true, delete: true },
                     documents: { view: true, create: true, edit: true, delete: true },
                     tasks: { view: true, create: true, edit: true, delete: true },
-                    reports: { view: true },
-                    users: { view: true, create: true, edit: true, delete: true }
+                    reports: { view: true, create: true, edit: true, delete: true },
+                    users: { view: true, create: true, edit: true, delete: true },
+                    campaigns: { view: true, create: true, edit: true, delete: true }
                   },
                   createdAt: new Date(),
                   updatedAt: new Date()

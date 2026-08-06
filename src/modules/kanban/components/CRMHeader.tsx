@@ -58,7 +58,11 @@ export function CRMHeader({
   activeFiltersCount = 0
 }: CRMHeaderProps) {
   const { userData } = useAuth();
-  const { isAdmin } = usePermission();
+  const { isAdmin, hasPermission } = usePermission();
+
+  const canCreateCard = hasPermission('kanban', 'create');
+  const canCreateClient = hasPermission('clients', 'create');
+  const canConfigurePipeline = isAdmin || hasPermission('kanban', 'edit');
   
   const [totalClients, setTotalClients] = useState(0);
   const [pendingTasks, setPendingTasks] = useState(0);
@@ -131,7 +135,7 @@ export function CRMHeader({
               ))}
             </Select>
 
-            {selectedPipelineId && selectedPipelineId !== 'default' && isAdmin && onConfigurePipelines && (
+            {selectedPipelineId && selectedPipelineId !== 'default' && canConfigurePipeline && onConfigurePipelines && (
               <div className="flex items-center gap-1 shrink-0">
                 <button
                   type="button"
@@ -242,22 +246,26 @@ export function CRMHeader({
             )}
           </Button>
           
-          {isAdmin && (
+          {canConfigurePipeline && (
             <Button variant="outline" size="sm" className="gap-2 h-9" onClick={() => onConfigurePipelines('list')}>
               <Settings size={16} />
               Configurar Pipeline
             </Button>
           )}
 
-          <Button variant="outline" size="sm" className="gap-2 h-9">
-            <Plus size={16} />
-            Novo Cliente
-          </Button>
+          {canCreateClient && (
+            <Button variant="outline" size="sm" className="gap-2 h-9">
+              <Plus size={16} />
+              Novo Cliente
+            </Button>
+          )}
           
-          <Button size="sm" className="gap-2 h-9" onClick={onAddCard}>
-            <Plus size={16} />
-            Nova Oportunidade
-          </Button>
+          {canCreateCard && (
+            <Button size="sm" className="gap-2 h-9" onClick={onAddCard}>
+              <Plus size={16} />
+              Nova Oportunidade
+            </Button>
+          )}
         </div>
       </div>
     </div>

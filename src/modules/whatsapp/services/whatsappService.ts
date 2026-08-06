@@ -1,5 +1,6 @@
 import { Chat, Message, QuickResponse, Tag } from '../types';
 import { whatsappRepository } from '../repositories/whatsappRepository';
+import { evolutionService } from './evolutionService';
 
 const DEMO_CHATS: Omit<Chat, 'id' | 'updatedAt'>[] = [
   {
@@ -132,9 +133,10 @@ export const whatsappService = {
       type: Message['type'];
       isFromMe: boolean;
       attachment?: Message['attachment'];
-    }
+    },
+    contactPhone?: string
   ) => {
-    return await whatsappRepository.addMessage({
+    const messageId = await whatsappRepository.addMessage({
       chatId,
       companyId,
       senderId: messageData.senderId,
@@ -145,6 +147,14 @@ export const whatsappService = {
       isFromMe: messageData.isFromMe,
       attachment: messageData.attachment
     });
+
+    if (messageData.isFromMe && contactPhone && companyId && messageData.text) {
+      evolutionService.sendTextMessage(companyId, contactPhone, messageData.text).catch((err) => {
+        console.warn('Erro ao disparar mensagem via Evolution API:', err);
+      });
+    }
+
+    return messageId;
   },
 
   markAsRead: async (chatId: string) => {

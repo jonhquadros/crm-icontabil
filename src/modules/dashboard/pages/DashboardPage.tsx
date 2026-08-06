@@ -35,6 +35,7 @@ import { DocumentFile } from '../../documents/types';
 import { AddClientModal } from '../../clients/components/AddClientModal';
 import { AddTaskModal } from '../../tasks/components/AddTaskModal';
 import { EditTaskModal } from '../../tasks/components/EditTaskModal';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { Button } from '../../../shared/components/ui/Button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { format, isToday, isBefore, startOfDay, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -52,6 +53,8 @@ export function DashboardPage() {
   const [isAddClientOpen, setIsAddClientOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!userData?.companyId) return;
@@ -193,12 +196,20 @@ export function DashboardPage() {
     }
   };
 
-  const handleDeleteTask = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+  const handleDeleteTask = (task: Task) => {
+    setTaskToDelete(task);
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!taskToDelete) return;
+    setIsDeleting(true);
     try {
-      await taskService.deleteTask(id);
+      await taskService.deleteTask(taskToDelete.id);
+      setTaskToDelete(null);
     } catch (error) {
       console.error('Error deleting task');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -224,16 +235,6 @@ export function DashboardPage() {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Painel de Controle</h2>
           <p className="text-muted-foreground">Bem-vindo ao seu resumo diário do iContábil CRM.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsAddTaskOpen(true)}>
-            <Plus size={16} />
-            Nova Tarefa
-          </Button>
-          <Button size="sm" className="gap-2" onClick={() => setIsAddClientOpen(true)}>
-            <Plus size={16} />
-            Novo Cliente
-          </Button>
         </div>
       </div>
 
@@ -479,7 +480,7 @@ export function DashboardPage() {
                         <Pencil size={12} />
                       </button>
                       <button 
-                        onClick={() => handleDeleteTask(task.id)}
+                        onClick={() => handleDeleteTask(task)}
                         className="p-1 hover:bg-danger/10 rounded text-muted-foreground hover:text-danger transition-colors"
                       >
                         <Trash2 size={12} />
@@ -499,6 +500,18 @@ export function DashboardPage() {
           </PermissionGuard>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!taskToDelete}
+        onClose={() => setTaskToDelete(null)}
+        onConfirm={handleConfirmDeleteTask}
+        title="Excluir Tarefa"
+        message={`Tem certeza que deseja excluir a tarefa "${taskToDelete?.title}"? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

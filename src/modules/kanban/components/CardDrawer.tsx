@@ -45,6 +45,7 @@ import { kanbanService } from '../services/kanbanService';
 import { documentService } from '../../documents/services/documentService';
 import { taskService } from '../../tasks/services/taskService';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -71,6 +72,11 @@ const DEFAULT_CHECKLIST_MODEL: { title: string }[] = [
 
 export function CardDrawer({ card, isOpen, onClose, columns, initialEditMode }: CardDrawerProps) {
   const { user, userData } = useAuth();
+  const { hasPermission } = usePermission();
+
+  const canEdit = hasPermission('kanban', 'edit');
+  const canDelete = hasPermission('kanban', 'delete');
+
   const [activeTab, setActiveTab] = useState('resumo');
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -531,8 +537,9 @@ export function CardDrawer({ card, isOpen, onClose, columns, initialEditMode }: 
               <div className="relative group">
                 <select 
                   value={card.column}
+                  disabled={!canEdit}
                   onChange={(e) => handleMoveStage(e.target.value)}
-                  className="bg-background border border-border rounded-md text-xs font-semibold px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="bg-background border border-border rounded-md text-xs font-semibold px-2 py-1 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {columns.map(col => (
                     <option key={col.id} value={col.id}>
@@ -557,36 +564,42 @@ export function CardDrawer({ card, isOpen, onClose, columns, initialEditMode }: 
 
           <div className="flex items-center gap-2 shrink-0">
             {/* Quick Actions Dropdown */}
-            <div className="relative">
-              <button 
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/80 transition-colors"
-                title="Ações Rápidas"
-              >
-                <MoreVertical size={18} />
-              </button>
+            {(canEdit || canDelete) && (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/80 transition-colors"
+                  title="Ações Rápidas"
+                >
+                  <MoreVertical size={18} />
+                </button>
 
-              {showMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-xl z-50 py-1">
-                    <button 
-                      onClick={() => { setShowMenu(false); setIsEditing(true); setActiveTab('resumo'); }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
-                    >
-                      <Edit2 size={14} /> Editar Dados
-                    </button>
-                    <div className="h-px bg-border my-1" />
-                    <button 
-                      onClick={() => { setShowMenu(false); setIsDeleteModalOpen(true); }}
-                      className="w-full text-left px-3 py-2 text-xs text-danger hover:bg-danger/10 flex items-center gap-2"
-                    >
-                      <Trash2 size={14} /> Excluir Oportunidade
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+                    <div className="absolute right-0 top-full mt-1 w-40 bg-card border border-border rounded-lg shadow-xl z-50 py-1">
+                      {canEdit && (
+                        <button 
+                          onClick={() => { setShowMenu(false); setIsEditing(true); setActiveTab('resumo'); }}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
+                        >
+                          <Edit2 size={14} /> Editar Dados
+                        </button>
+                      )}
+                      {canEdit && canDelete && <div className="h-px bg-border my-1" />}
+                      {canDelete && (
+                        <button 
+                          onClick={() => { setShowMenu(false); setIsDeleteModalOpen(true); }}
+                          className="w-full text-left px-3 py-2 text-xs text-danger hover:bg-danger/10 flex items-center gap-2"
+                        >
+                          <Trash2 size={14} /> Excluir Oportunidade
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             <SheetClose onClick={onClose}>
               <X size={20} className="text-muted-foreground hover:text-foreground" />
@@ -596,14 +609,16 @@ export function CardDrawer({ card, isOpen, onClose, columns, initialEditMode }: 
         
         {/* Barra de Ações Rápidas em botões */}
         <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-border/50 text-xs">
-          <Button 
-            variant={isEditing ? "default" : "outline"} 
-            size="sm" 
-            className="h-8 gap-1.5 bg-background"
-            onClick={() => { setIsEditing(!isEditing); setActiveTab('resumo'); }}
-          >
-            <Edit2 size={13} /> {isEditing ? 'Cancelar Edição' : 'Editar'}
-          </Button>
+          {canEdit && (
+            <Button 
+              variant={isEditing ? "default" : "outline"} 
+              size="sm" 
+              className="h-8 gap-1.5 bg-background"
+              onClick={() => { setIsEditing(!isEditing); setActiveTab('resumo'); }}
+            >
+              <Edit2 size={13} /> {isEditing ? 'Cancelar Edição' : 'Editar'}
+            </Button>
+          )}
 
           <Button 
             variant="outline" 

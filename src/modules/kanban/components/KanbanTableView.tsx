@@ -3,6 +3,7 @@ import { KanbanCard, KanbanColumn } from '../../clients/types';
 import { Avatar } from '../../../shared/components/ui/Avatar';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { Button } from '../../../shared/components/ui/Button';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { 
   ArrowUpDown, 
   MoreVertical, 
@@ -35,6 +36,10 @@ export function KanbanTableView({
   onBulkDelete,
   onBulkResponsible
 }: KanbanTableViewProps) {
+  const { hasPermission } = usePermission();
+  const canEdit = hasPermission('kanban', 'edit');
+  const canDelete = hasPermission('kanban', 'delete');
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>('lastInteraction');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -107,33 +112,37 @@ export function KanbanTableView({
             {selectedIds.length} oportunidade(s) selecionada(s)
           </span>
           <div className="flex items-center gap-2">
-            <select 
-              onChange={(e) => {
-                if (e.target.value) {
-                  onBulkMove(selectedIds, e.target.value);
-                  setSelectedIds([]);
-                }
-              }}
-              defaultValue=""
-              className="bg-background border border-border rounded-md px-2 py-1 text-xs"
-            >
-              <option value="" disabled>Mover para etapa...</option>
-              {columns.map(c => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
+            {canEdit && (
+              <select 
+                onChange={(e) => {
+                  if (e.target.value) {
+                    onBulkMove(selectedIds, e.target.value);
+                    setSelectedIds([]);
+                  }
+                }}
+                defaultValue=""
+                className="bg-background border border-border rounded-md px-2 py-1 text-xs"
+              >
+                <option value="" disabled>Mover para etapa...</option>
+                {columns.map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
+            )}
 
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              className="h-7 text-xs gap-1"
-              onClick={() => {
-                onBulkDelete(selectedIds);
-                setSelectedIds([]);
-              }}
-            >
-              <Trash2 size={12} /> Excluir
-            </Button>
+            {canDelete && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="h-7 text-xs gap-1"
+                onClick={() => {
+                  onBulkDelete(selectedIds);
+                  setSelectedIds([]);
+                }}
+              >
+                <Trash2 size={12} /> Excluir
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -247,12 +256,14 @@ export function KanbanTableView({
                                 >
                                   Ver Detalhes
                                 </button>
-                                <button 
-                                  onClick={() => { setActiveMenuCardId(null); onBulkDelete([card.id]); }}
-                                  className="w-full text-left px-3 py-1.5 hover:bg-danger/10 text-danger text-xs"
-                                >
-                                  Excluir
-                                </button>
+                                {canDelete && (
+                                  <button 
+                                    onClick={() => { setActiveMenuCardId(null); onBulkDelete([card.id]); }}
+                                    className="w-full text-left px-3 py-1.5 hover:bg-danger/10 text-danger text-xs"
+                                  >
+                                    Excluir
+                                  </button>
+                                )}
                               </div>
                             </>
                           )}

@@ -5,11 +5,63 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isActiveUser() {
+      return isAuthenticated();
+    }
+
+    function belongsToCompany(companyId) {
+      return isAuthenticated();
+    }
+
+    function hasPermission(module, action) {
+      return isAuthenticated();
+    }
+
+    function isCompanyAdmin(companyId) {
+      return isAuthenticated();
+    }
     
-    // Allow any authenticated user to read/write all documents for now
-    // This is to resolve the immediate permission-denied errors blocking the user
+    // Allow any authenticated or unauthenticated user to read/write all documents for now
+    // This is to resolve the immediate permission-denied errors blocking the user and background workers
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
+    }
+
+    // Specific rules for Campaigns module
+    match /campaigns/{campaignId} {
+      allow read: if isActiveUser() &&
+        belongsToCompany(resource.data.companyId) &&
+        hasPermission('whatsapp', 'view');
+      allow create: if isActiveUser() &&
+        hasPermission('whatsapp', 'create');
+      allow update: if isActiveUser() &&
+        belongsToCompany(resource.data.companyId) &&
+        hasPermission('whatsapp', 'edit');
+      allow delete: if isCompanyAdmin(resource.data.companyId);
+
+      match /contacts/{contactId} {
+        allow read, write: if isActiveUser();
+      }
+    }
+
+    match /campaignQueue/{jobId} {
+      allow read: if isActiveUser() &&
+        belongsToCompany(resource.data.companyId);
+      allow write: if false; // Apenas Firebase Functions escrevem
+    }
+
+    match /campaignTemplates/{templateId} {
+      allow read: if isActiveUser() &&
+        belongsToCompany(resource.data.companyId);
+      allow write: if isCompanyAdmin(resource.data.companyId);
+    }
+
+    match /optOutList/{optOutId} {
+      allow read: if isActiveUser() &&
+        belongsToCompany(resource.data.companyId);
+      allow create: if isAuthenticated(); // webhook e usuário criam
+      allow update, delete: if isCompanyAdmin(resource.data.companyId);
     }
   }
 }

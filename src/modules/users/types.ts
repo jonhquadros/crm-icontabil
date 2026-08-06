@@ -22,6 +22,7 @@ export interface UserPermissions {
   tasks: ModulePermissions;
   reports: ModulePermissions;
   users: ModulePermissions;
+  campaigns: ModulePermissions;
 }
 
 export interface AppUser {
@@ -49,4 +50,5 @@ export const DEFAULT_PERMISSIONS: UserPermissions = {
   tasks: { view: true, create: true, edit: true, delete: true },
   reports: { view: true, create: false, edit: false, delete: false },
   users: { view: false, create: false, edit: false, delete: false },
+  campaigns: { view: true, create: true, edit: true, delete: false },
 };

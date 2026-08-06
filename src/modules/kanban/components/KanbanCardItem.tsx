@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { KanbanCard } from '../../clients/types';
 import { cn } from '../../../shared/utils/cn';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { Avatar } from '../../../shared/components/ui/Avatar';
 import { Badge } from '../../../shared/components/ui/Badge';
 import { formatDistanceToNow } from 'date-fns';
@@ -32,6 +33,10 @@ const DraggableComponent = Draggable as any;
 
 export function KanbanCardItem({ card, index, onClick, onDelete, onEdit }: KanbanCardItemProps) {
   const [showMenu, setShowMenu] = useState(false);
+  const { hasPermission } = usePermission();
+
+  const canEdit = hasPermission('kanban', 'edit');
+  const canDelete = hasPermission('kanban', 'delete');
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -64,7 +69,7 @@ export function KanbanCardItem({ card, index, onClick, onDelete, onEdit }: Kanba
   const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
-    <DraggableComponent draggableId={card.id} index={index}>
+    <DraggableComponent draggableId={card.id} index={index} isDragDisabled={!canEdit}>
       {(provided: any, snapshot: any) => (
         <div
           ref={provided.innerRef}
@@ -89,52 +94,67 @@ export function KanbanCardItem({ card, index, onClick, onDelete, onEdit }: Kanba
               ))}
             </div>
             
-            <div className="relative">
-              <button 
-                onClick={(e) => {
-                  stopPropagation(e);
-                  setShowMenu(!showMenu);
-                }}
-                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/50 transition-colors"
-              >
-                <MoreVertical size={16} />
-              </button>
-              
-              {showMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={(e) => { stopPropagation(e); setShowMenu(false); }}
-                  />
-                  <div className="absolute right-0 top-full mt-1 w-36 bg-card border border-border rounded-md shadow-lg z-50 py-1 overflow-hidden">
-                    <button 
-                      onClick={(e) => {
-                        stopPropagation(e);
-                        setShowMenu(false);
-                        if (onEdit) onEdit();
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
-                    >
-                      <Edit2 size={12} /> Editar
-                    </button>
-                    <button className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2">
-                      <ArrowRight size={12} /> Mover
-                    </button>
-                    <div className="h-px bg-border my-1"></div>
-                    <button 
-                      onClick={(e) => {
-                        stopPropagation(e);
-                        setShowMenu(false);
-                        if (onDelete) onDelete();
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-danger/10 text-danger flex items-center gap-2"
-                    >
-                      <Trash2 size={12} /> Excluir
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+            {(canEdit || canDelete) && (
+              <div className="relative">
+                <button 
+                  onClick={(e) => {
+                    stopPropagation(e);
+                    setShowMenu(!showMenu);
+                  }}
+                  className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted/50 transition-colors"
+                >
+                  <MoreVertical size={16} />
+                </button>
+                
+                {showMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={(e) => { stopPropagation(e); setShowMenu(false); }}
+                    />
+                    <div className="absolute right-0 top-full mt-1 w-36 bg-card border border-border rounded-md shadow-lg z-50 py-1 overflow-hidden">
+                      {canEdit && (
+                        <>
+                          <button 
+                            onClick={(e) => {
+                              stopPropagation(e);
+                              setShowMenu(false);
+                              if (onEdit) onEdit();
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
+                          >
+                            <Edit2 size={12} /> Editar
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              stopPropagation(e);
+                              setShowMenu(false);
+                              if (onClick) onClick();
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center gap-2"
+                          >
+                            <ArrowRight size={12} /> Detalhes
+                          </button>
+                        </>
+                      )}
+                      {canEdit && canDelete && <div className="h-px bg-border my-1"></div>}
+                      {canDelete && (
+                        <button 
+                          onClick={(e) => {
+                            stopPropagation(e);
+                            setShowMenu(false);
+                            if (onDelete) onDelete();
+                          }}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-danger/10 text-danger flex items-center gap-2"
+                        >
+                          <Trash2 size={12} /> Excluir
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           
           {/* Corpo do card */}

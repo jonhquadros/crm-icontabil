@@ -4,16 +4,20 @@ import { evolutionService } from '../services/evolutionService';
 import { EvolutionConfig } from '../types';
 import toast from 'react-hot-toast';
 
+const DEFAULT_API_URL = import.meta.env.VITE_EVOLUTION_API_URL || 'https://go.relaxsolucoes.online';
+const DEFAULT_API_KEY = import.meta.env.VITE_EVOLUTION_API_KEY || '4f4d9fea-065a-4bcc-8e74-2e187ae1e89f';
+const DEFAULT_CONNECTED_PHONE = import.meta.env.VITE_EVOLUTION_DEFAULT_NUMBER || '(91) 98402-7568';
+
 export function useEvolution() {
   const { userData, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
   const [config, setConfig] = useState<EvolutionConfig>({
-    apiUrl: 'https://api.evolution-api.com',
-    apiKey: '',
+    apiUrl: DEFAULT_API_URL,
+    apiKey: DEFAULT_API_KEY,
     instanceName: 'icontabil-session',
     webhookUrl: '',
-    connectedPhone: '(91) 98402-7568',
+    connectedPhone: DEFAULT_CONNECTED_PHONE,
     status: 'disconnected',
     qrCodeUrl: '',
   });

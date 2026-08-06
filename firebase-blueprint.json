@@ -120,6 +120,95 @@
         { "name": "createdBy", "type": "string" },
         { "name": "updatedBy", "type": "string" }
       ]
+    },
+    {
+      "name": "campaigns",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "description", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "type", "type": "string" },
+        { "name": "instanceId", "type": "string" },
+        { "name": "delayMinMs", "type": "number" },
+        { "name": "delayMaxMs", "type": "number" },
+        { "name": "batchSize", "type": "number" },
+        { "name": "dailyLimit", "type": "number" },
+        { "name": "nativeDelayMs", "type": "number" },
+        { "name": "templateId", "type": "string" },
+        { "name": "templateText", "type": "string" },
+        { "name": "templateVariations", "type": "array" },
+        { "name": "variables", "type": "array" },
+        { "name": "scheduledAt", "type": "timestamp" },
+        { "name": "startedAt", "type": "timestamp" },
+        { "name": "completedAt", "type": "timestamp" },
+        { "name": "pausedAt", "type": "timestamp" },
+        { "name": "pauseReason", "type": "string" },
+        { "name": "metrics", "type": "map" }
+      ]
+    },
+    {
+      "name": "campaignQueue",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "campaignId", "type": "string" },
+        { "name": "contactId", "type": "string" },
+        { "name": "instanceId", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "scheduledAt", "type": "timestamp" },
+        { "name": "processedAt", "type": "timestamp" },
+        { "name": "attempts", "type": "number" },
+        { "name": "phone", "type": "string" },
+        { "name": "personalizedText", "type": "string" },
+        { "name": "nativeDelayMs", "type": "number" },
+        { "name": "messageId", "type": "string" }
+      ]
+    },
+    {
+      "name": "campaignTemplates",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "category", "type": "string" },
+        { "name": "text", "type": "string" },
+        { "name": "variables", "type": "array" },
+        { "name": "usageCount", "type": "number" },
+        { "name": "variations", "type": "array" }
+      ]
+    },
+    {
+      "name": "optOutList",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "companyId", "type": "string" },
+        { "name": "phone", "type": "string" },
+        { "name": "optedOutAt", "type": "timestamp" },
+        { "name": "source", "type": "string" },
+        { "name": "active", "type": "boolean" },
+        { "name": "createdAt", "type": "timestamp" },
+        { "name": "updatedAt", "type": "timestamp" },
+        { "name": "createdBy", "type": "string" },
+        { "name": "updatedBy", "type": "string" },
+        { "name": "reason", "type": "string" }
+      ]
     }
   ]
 }

@@ -11,7 +11,9 @@ import { DocumentsPage } from '../../modules/documents/pages/DocumentsPage';
 import { TasksPage } from '../../modules/tasks/pages/TasksPage';
 import { ReportsPage } from '../../modules/reports/pages/ReportsPage';
 import { SettingsPage } from '../../modules/settings/pages/SettingsPage';
+import { CampaignsPage } from '../../modules/campaigns/pages/CampaignsPage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { RoutePermissionGuard } from './RoutePermissionGuard';
 
 import { CRMListPage } from '../../modules/kanban/pages/CRMListPage';
 
@@ -28,23 +30,153 @@ export function AppRoutes() {
         }
       >
         <Route index element={<DashboardPage />} />
-        <Route path="clients" element={<ClientsPage />} />
         
-        <Route path="crm">
-          <Route index element={<Navigate to="pipeline" replace />} />
-          <Route path="pipeline" element={<KanbanPage />} />
-          <Route path="lista" element={<KanbanPage />} />
-          <Route path="agenda" element={<KanbanPage />} />
-          <Route path="atividades" element={<KanbanPage />} />
-          <Route path="relatorios" element={<KanbanPage />} />
-        </Route>
+        <Route 
+          path="clients" 
+          element={
+            <RoutePermissionGuard module="clients">
+              <ClientsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="crm"
+          element={
+            <RoutePermissionGuard module="kanban">
+              <Navigate to="pipeline" replace />
+            </RoutePermissionGuard>
+          }
+        />
+        
+        <Route 
+          path="crm/pipeline" 
+          element={
+            <RoutePermissionGuard module="kanban">
+              <KanbanPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="crm/lista" 
+          element={
+            <RoutePermissionGuard module="kanban">
+              <KanbanPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="crm/agenda" 
+          element={
+            <RoutePermissionGuard module="kanban">
+              <KanbanPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="crm/atividades" 
+          element={
+            <RoutePermissionGuard module="kanban">
+              <KanbanPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="crm/relatorios" 
+          element={
+            <RoutePermissionGuard module="kanban">
+              <KanbanPage />
+            </RoutePermissionGuard>
+          } 
+        />
 
-        <Route path="users" element={<UsersPage />} />
-        <Route path="whatsapp" element={<WhatsAppPage />} />
-        <Route path="documents" element={<DocumentsPage />} />
-        <Route path="tasks" element={<TasksPage />} />
-        <Route path="reports" element={<ReportsPage />} />
+        <Route 
+          path="users" 
+          element={
+            <RoutePermissionGuard module="users">
+              <UsersPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="whatsapp" 
+          element={
+            <RoutePermissionGuard module="whatsapp">
+              <WhatsAppPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="campaigns" 
+          element={
+            <RoutePermissionGuard module="campaigns">
+              <CampaignsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="campaigns/dashboard" 
+          element={
+            <RoutePermissionGuard module="campaigns">
+              <CampaignsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="campaigns/optout" 
+          element={
+            <RoutePermissionGuard module="campaigns">
+              <CampaignsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="campaigns/*" 
+          element={
+            <RoutePermissionGuard module="campaigns">
+              <CampaignsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="documents" 
+          element={
+            <RoutePermissionGuard module="documents">
+              <DocumentsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="tasks" 
+          element={
+            <RoutePermissionGuard module="tasks">
+              <TasksPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
+        <Route 
+          path="reports" 
+          element={
+            <RoutePermissionGuard module="reports">
+              <ReportsPage />
+            </RoutePermissionGuard>
+          } 
+        />
+        
         <Route path="settings" element={<SettingsPage />} />
+        
         {/* Placeholder routes for remaining modules */}
         <Route path="calendar" element={<div className="p-8 text-center">Módulo de Agenda em breve...</div>} />
       </Route>
@@ -53,3 +185,4 @@ export function AppRoutes() {
     </Routes>
   );
 }
+

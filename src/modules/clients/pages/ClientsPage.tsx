@@ -18,16 +18,24 @@ import {
 } from 'lucide-react';
 import { clientService } from '../services/clientService';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { Client, ClientStatus, TaxRegime } from '../types';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
 import { AddClientModal } from '../components/AddClientModal';
 import { EditClientModal } from '../components/EditClientModal';
+import { ConfirmModal } from '../../../shared/components/ui/ConfirmModal';
 import { cn } from '../../../shared/utils/cn';
 import toast from 'react-hot-toast';
 
 export function ClientsPage() {
   const { userData } = useAuth();
+  const { hasPermission } = usePermission();
+
+  const canCreate = hasPermission('clients', 'create');
+  const canEdit = hasPermission('clients', 'edit');
+  const canDelete = hasPermission('clients', 'delete');
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,6 +43,8 @@ export function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState<ClientStatus | 'all'>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!userData?.companyId) return;
@@ -83,15 +93,22 @@ export function ClientsPage() {
     }
   };
 
-  const handleDeleteClient = async (id: string) => {
-    if (!window.confirm('Tem certeza que deseja excluir este cliente?')) return;
-    
+  const handleDeleteClient = (client: Client) => {
+    setClientToDelete(client);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clientToDelete) return;
+    setIsDeleting(true);
     try {
-      await clientService.deleteClient(id);
+      await clientService.deleteClient(clientToDelete.id);
       toast.success('Cliente removido com sucesso');
+      setClientToDelete(null);
     } catch (error) {
       console.error(error);
       toast.error('Erro ao excluir cliente');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -102,10 +119,12 @@ export function ClientsPage() {
           <h2 className="text-2xl font-bold tracking-tight">Clientes</h2>
           <p className="text-muted-foreground text-sm">Gerencie a base de clientes do seu escritório.</p>
         </div>
-        <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
-          <Plus size={18} />
-          Novo Cliente
-        </Button>
+        {canCreate && (
+          <Button className="gap-2" onClick={() => setIsAddModalOpen(true)}>
+            <Plus size={18} />
+            Novo Cliente
+          </Button>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -281,20 +300,24 @@ export function ClientsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
-                          onClick={() => setEditingClient(client)}
-                          className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-muted-foreground hover:text-primary"
-                          title="Editar Cliente"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClient(client.id)}
-                          className="p-2 hover:bg-danger/10 rounded-lg transition-colors text-muted-foreground hover:text-danger"
-                          title="Excluir Cliente"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {canEdit && (
+                          <button 
+                            onClick={() => setEditingClient(client)}
+                            className="p-2 hover:bg-primary/10 rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                            title="Editar Cliente"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button 
+                            onClick={() => handleDeleteClient(client)}
+                            className="p-2 hover:bg-danger/10 rounded-lg transition-colors text-muted-foreground hover:text-danger"
+                            title="Excluir Cliente"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -304,6 +327,18 @@ export function ClientsPage() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!clientToDelete}
+        onClose={() => setClientToDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Cliente"
+        message={`Tem certeza que deseja excluir o cliente ${clientToDelete?.companyName || clientToDelete?.name}? Esta ação não pode ser desfeita.`}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

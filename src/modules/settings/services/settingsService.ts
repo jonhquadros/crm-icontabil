@@ -19,12 +19,12 @@ export const settingsService = {
 
   loadIntegrations: async (companyId: string): Promise<IntegrationConfig> => {
     const data = await settingsRepository.getIntegrations(companyId);
-    // Default fallback structure
+    // Default fallback structure with Evolution API env vars
     return {
       whatsapp: {
-        enabled: data?.whatsapp?.enabled ?? false,
-        apiUrl: data?.whatsapp?.apiUrl || '',
-        apiKey: data?.whatsapp?.apiKey || '',
+        enabled: data?.whatsapp?.enabled ?? true,
+        apiUrl: data?.whatsapp?.apiUrl || import.meta.env.VITE_EVOLUTION_API_URL || 'https://go.relaxsolucoes.online',
+        apiKey: data?.whatsapp?.apiKey || import.meta.env.VITE_EVOLUTION_API_KEY || '4f4d9fea-065a-4bcc-8e74-2e187ae1e89f',
         instanceName: data?.whatsapp?.instanceName || 'icontabil-session',
         status: data?.whatsapp?.status || 'disconnected',
         lastConnectedAt: data?.whatsapp?.lastConnectedAt || undefined,

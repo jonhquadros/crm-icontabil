@@ -3,13 +3,16 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseAppletConfig from '../../firebase-applet-config.json';
 
+// Safely determine environment variables in both client (Vite) and server (Node) environments
+const safeEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (firebaseAppletConfig as any).apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || (firebaseAppletConfig as any).authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || (firebaseAppletConfig as any).projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || (firebaseAppletConfig as any).storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || (firebaseAppletConfig as any).messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || (firebaseAppletConfig as any).appId,
+  apiKey: safeEnv.VITE_FIREBASE_API_KEY || (firebaseAppletConfig as any).apiKey,
+  authDomain: safeEnv.VITE_FIREBASE_AUTH_DOMAIN || (firebaseAppletConfig as any).authDomain,
+  projectId: safeEnv.VITE_FIREBASE_PROJECT_ID || (firebaseAppletConfig as any).projectId,
+  storageBucket: safeEnv.VITE_FIREBASE_STORAGE_BUCKET || (firebaseAppletConfig as any).storageBucket,
+  messagingSenderId: safeEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || (firebaseAppletConfig as any).messagingSenderId,
+  appId: safeEnv.VITE_FIREBASE_APP_ID || (firebaseAppletConfig as any).appId,
 };
 
 const app = initializeApp(firebaseConfig);

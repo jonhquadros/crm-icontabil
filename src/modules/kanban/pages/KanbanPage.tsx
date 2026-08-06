@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { kanbanService } from '../services/kanbanService';
 import { useAuth } from '../../../app/providers/AuthProvider';
+import { usePermission } from '../../../shared/hooks/usePermission';
 import { db } from '../../../lib/firebase';
 import { writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { KanbanCard, KanbanColumn, Pipeline, PipelineColumn } from '../../clients/types';
@@ -26,6 +27,7 @@ import { CRMAgendaView } from '../components/CRMAgendaView';
 import { ActivityTimelineFeed } from '../components/ActivityTimelineFeed';
 import { CRMReportsView } from '../components/CRMReportsView';
 import { taskService } from '../../tasks/services/taskService';
+import { automationService } from '../../campaigns/services/automationService';
 import { Task } from '../../tasks/types';
 import { cn } from '../../../shared/utils/cn';
 import toast from 'react-hot-toast';
@@ -44,6 +46,10 @@ const DroppableComponent = Droppable as any;
 
 export function KanbanPage() {
   const { userData, user } = useAuth();
+  const { hasPermission } = usePermission();
+
+  const canEdit = hasPermission('kanban', 'edit');
+  const canDelete = hasPermission('kanban', 'delete');
   
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [selectedPipelineId, setSelectedPipelineId] = useState<string | null>(null);
@@ -374,6 +380,11 @@ export function KanbanPage() {
   }, [userData?.companyId]);
 
   const onDragEnd = async (result: DropResult) => {
+    if (!canEdit) {
+      toast.error('Você não tem permissão para alterar a etapa desta oportunidade.');
+      return;
+    }
+
     const { destination, source, draggableId } = result;
 
     if (!destination) return;
@@ -401,6 +412,32 @@ export function KanbanPage() {
 
     try {
       await kanbanService.updateCardPosition(draggableId, destCol, destination.index);
+
+      // Trigger CRM Campaign Automations if moved to a different column
+      if (sourceCol !== destCol) {
+        const movedCard = cards.find(c => c.id === draggableId);
+        if (movedCard && userData?.companyId) {
+          const destColLabel = currentColumns.find(c => c.id === destCol)?.label || destCol;
+          automationService.processCardColumnChange({
+            companyId: userData.companyId,
+            cardId: movedCard.id,
+            cardTitle: movedCard.title,
+            clientName: movedCard.clientName || movedCard.title,
+            phone: movedCard.phone || (movedCard as any).contactPhone || (movedCard as any).mobile || (movedCard as any).whatsapp,
+            companyName: movedCard.companyName || (movedCard as any).company,
+            columnId: destCol,
+            columnLabel: destColLabel,
+            pipelineId: selectedPipelineId || undefined,
+            authorName: userData?.name || user?.displayName || user?.email || 'Sistema'
+          }).then(res => {
+            if (res.triggered) {
+              toast.success(`Automação de WhatsApp enfileirada (${res.queuedCount} envio)!`);
+            }
+          }).catch(err => {
+            console.error('Error executing CRM automation trigger:', err);
+          });
+        }
+      }
     } catch (error) {
       console.error('Error updating position:', error);
       toast.error('Erro ao mover card. Sincronizando...');

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutGrid, Users, MessageSquare, Calendar, FileText, CheckSquare, BarChart3, Settings, LogOut, Shield, Layout, ChevronDown, List, Activity, PieChart } from 'lucide-react';
+import { LayoutGrid, Users, MessageSquare, Calendar, FileText, CheckSquare, BarChart3, Settings, LogOut, Shield, Layout, ChevronDown, List, Activity, PieChart, Send, UserX, Layers, Zap } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { usePermission } from '../hooks/usePermission';
@@ -124,6 +124,15 @@ export function Sidebar({ userName, userRole, onLogout, isOpen, isDrawer, onClos
           <NavItem key={`${item.to}-${item.label}`} icon={item.icon} label={item.label} to={item.to} />
         ))}
         
+        {hasPermission('whatsapp') && (
+          <NavGroup icon={Send} label="Campanhas" activePathPrefix="/dashboard/campaigns">
+            <SubNavItem icon={BarChart3} label="Dashboard" to="/dashboard/campaigns/dashboard" />
+            <SubNavItem icon={Layers} label="Campanhas" to="/dashboard/campaigns" />
+            <SubNavItem icon={Zap} label="Automações" to="/dashboard/campaigns/automations" />
+            <SubNavItem icon={UserX} label="Gestão Opt-Out" to="/dashboard/campaigns/optout" />
+          </NavGroup>
+        )}
+
         {hasPermission('kanban') && (
           <NavGroup icon={Layout} label="CRM" activePathPrefix="/dashboard/crm">
             <SubNavItem icon={LayoutGrid} label="Pipeline" to="/dashboard/crm/pipeline" />

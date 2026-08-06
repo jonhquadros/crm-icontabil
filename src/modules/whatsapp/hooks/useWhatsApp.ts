@@ -71,14 +71,19 @@ export function useWhatsApp() {
     setShowQuickPicker(false);
 
     try {
-      await whatsappService.sendMessage(activeChat.id, companyId, {
-        senderId: userData.id,
-        senderName: userName,
-        text,
-        type,
-        isFromMe: true,
-        attachment
-      });
+      await whatsappService.sendMessage(
+        activeChat.id, 
+        companyId, 
+        {
+          senderId: userData.id,
+          senderName: userName,
+          text,
+          type,
+          isFromMe: true,
+          attachment
+        },
+        activeChat.contactPhone
+      );
     } catch (err: any) {
       toast.error('Erro ao enviar mensagem: ' + err.message);
     }

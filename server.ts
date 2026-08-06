@@ -4,12 +4,17 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { createServer as createViteServer } from "vite";
 import fs from "fs";
+import { initCampaignServer } from "./src/modules/campaigns/services/campaignServerService";
 
 // Ensure environment variables are loaded
 import "dotenv/config";
 
 const app = express();
 const PORT = 3000;
+
+// Parsers for JSON and URL-encoded payloads
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Request logger middleware
 app.use((req, res, next) => {
@@ -109,6 +114,9 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 });
 
 async function startServer() {
+  // Initialize Campaigns Backend Services (routing and background queue processing)
+  initCampaignServer(app);
+
   // Serve uploads folder statically
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 

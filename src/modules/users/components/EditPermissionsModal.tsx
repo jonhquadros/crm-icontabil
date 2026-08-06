@@ -21,7 +21,8 @@ const MODULE_LABELS: Record<keyof UserPermissions, string> = {
   documents: 'Documentos / Arquivos',
   tasks: 'Tarefas / Projetos',
   reports: 'Relatórios',
-  users: 'Gestão de Usuários'
+  users: 'Gestão de Usuários',
+  campaigns: 'Campanhas / Marketing'
 };
 
 export function EditPermissionsModal({ isOpen, onClose, user }: EditPermissionsModalProps) {
