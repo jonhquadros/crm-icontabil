@@ -1,20 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Smile, 
   Paperclip, 
   Send, 
   Mic, 
-  Square, 
   Image as ImageIcon, 
   FileText, 
   MapPin, 
   User as UserIcon, 
   Zap, 
-  X,
-  Video
+  X
 } from 'lucide-react';
-import { MessageType, QuickResponse } from '../types';
+import { Message, MessageType, QuickResponse, Chat } from '../types';
 import { cn } from '../../../shared/utils/cn';
+import { EmojiPickerPopover } from './ChatInputArea/EmojiPickerPopover';
+import { QuickResponsePopover } from './ChatInputArea/QuickResponsePopover';
+import { NewQuickResponseModal } from './ChatInputArea/NewQuickResponseModal';
+import { LinkPreviewCard, detectUrlInText, LinkPreviewInfo } from './ChatInputArea/LinkPreviewCard';
+import { AudioRecorderBar } from './ChatInputArea/AudioRecorderBar';
 
 interface ChatInputAreaProps {
   messageText: string;
@@ -29,6 +32,11 @@ interface ChatInputAreaProps {
   onStartAudioRecord: () => void;
   onStopAndSendAudio: () => void;
   onCancelAudioRecord: () => void;
+  replyingTo?: Message | null;
+  onCancelReply?: () => void;
+  chat?: Chat;
+  onTyping?: () => void;
+  onQuickResponsesUpdated?: () => void;
 }
 
 export function ChatInputArea({
@@ -44,22 +52,56 @@ export function ChatInputArea({
   onStartAudioRecord,
   onStopAndSendAudio,
   onCancelAudioRecord,
+  replyingTo,
+  onCancelReply,
+  chat,
+  onTyping,
+  onQuickResponsesUpdated
 }: ChatInputAreaProps) {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isNewQuickModalOpen, setIsNewQuickModalOpen] = useState(false);
+  
+  // Link preview state
+  const [linkPreview, setLinkPreview] = useState<LinkPreviewInfo | null>(null);
+  const [dismissedUrl, setDismissedUrl] = useState<string | null>(null);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onSend();
+  // Auto-detect links in text (4.3)
+  useEffect(() => {
+    const detected = detectUrlInText(messageText);
+    if (detected && detected.url !== dismissedUrl) {
+      setLinkPreview(detected);
+    } else if (!detected) {
+      setLinkPreview(null);
     }
-    if (e.key === '/') {
+  }, [messageText, dismissedUrl]);
+
+  const handleInputChange = (text: string) => {
+    onMessageChange(text);
+    if (onTyping) onTyping();
+
+    // Auto open quick picker when typing / or /c
+    if (text.startsWith('/') && !showQuickPicker) {
       onToggleQuickPicker(true);
     }
   };
 
-  const handleSelectQuickResponse = (item: QuickResponse) => {
-    onMessageChange(item.content);
-    onToggleQuickPicker(false);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendWithPreview();
+    }
+  };
+
+  const handleSendWithPreview = () => {
+    onSend();
+    setLinkPreview(null);
+    setDismissedUrl(null);
+  };
+
+  const handleSelectEmoji = (emoji: string) => {
+    onMessageChange(messageText + emoji);
+    setShowEmojiPicker(false);
   };
 
   const sampleAttachments = [
@@ -99,41 +141,62 @@ export function ChatInputArea({
 
   return (
     <div className="p-3 bg-card border-t border-border relative">
-      {/* Quick Responses Popover */}
-      {showQuickPicker && (
-        <div className="absolute bottom-16 left-4 bg-card border border-border rounded-xl shadow-xl w-80 max-h-60 overflow-y-auto z-20 divide-y divide-border/50 animate-in slide-in-from-bottom-2">
-          <div className="p-2 bg-muted/40 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <Zap size={12} className="text-amber-500" /> Respostas Rápidas (/)
-            </span>
-            <button 
-              onClick={() => onToggleQuickPicker(false)} 
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X size={14} />
-            </button>
+      {/* Reply Preview Banner (3.2) */}
+      {replyingTo && (
+        <div className="flex items-center justify-between p-2.5 mb-2 bg-muted/60 border-l-4 border-primary rounded-r-xl text-xs animate-in slide-in-from-bottom-2">
+          <div className="min-w-0 flex-1 pr-2">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-primary text-[11px]">Respondendo a {replyingTo.senderName}</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+              {replyingTo.text || replyingTo.attachment?.fileName || `[${replyingTo.type.toUpperCase()}]`}
+            </p>
           </div>
-          {quickResponses.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleSelectQuickResponse(item)}
-              className="w-full text-left p-2.5 hover:bg-muted/50 transition-colors space-y-0.5"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">{item.title}</span>
-                <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
-                  {item.shortcut}
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground line-clamp-2">{item.content}</p>
-            </button>
-          ))}
+          <button
+            onClick={onCancelReply}
+            className="p-1 text-muted-foreground hover:text-foreground rounded-full hover:bg-muted transition-colors shrink-0"
+            title="Cancelar resposta"
+          >
+            <X size={15} />
+          </button>
         </div>
       )}
 
+      {/* Link Preview Card (4.3) */}
+      {linkPreview && (
+        <LinkPreviewCard
+          preview={linkPreview}
+          onRemove={() => {
+            setDismissedUrl(linkPreview.url);
+            setLinkPreview(null);
+          }}
+        />
+      )}
+
+      {/* Evolved Quick Responses Popover (4.1 & 4.2) */}
+      <QuickResponsePopover
+        isOpen={showQuickPicker}
+        onClose={() => onToggleQuickPicker(false)}
+        quickResponses={quickResponses}
+        onSelect={(content) => {
+          onMessageChange(content);
+          onToggleQuickPicker(false);
+        }}
+        onOpenNewModal={() => setIsNewQuickModalOpen(true)}
+        chat={chat}
+        initialFilter={messageText.startsWith('/') ? messageText : ''}
+      />
+
+      {/* Emoji Picker Popover (4.0) */}
+      <EmojiPickerPopover
+        isOpen={showEmojiPicker}
+        onClose={() => setShowEmojiPicker(false)}
+        onSelectEmoji={handleSelectEmoji}
+      />
+
       {/* Attachment Menu */}
       {showAttachmentMenu && (
-        <div className="absolute bottom-16 left-12 bg-card border border-border rounded-xl shadow-xl p-2 z-20 flex flex-col gap-1 w-48 animate-in slide-in-from-bottom-2">
+        <div className="absolute bottom-16 left-12 bg-card border border-border rounded-xl shadow-xl p-2 z-30 flex flex-col gap-1 w-48 animate-in slide-in-from-bottom-2">
           {sampleAttachments.map((att) => (
             <button
               key={att.label}
@@ -152,68 +215,89 @@ export function ChatInputArea({
         </div>
       )}
 
-      {/* Audio Recording State Bar */}
+      {/* Audio Recording Bar or Input Controls */}
       {isRecordingAudio ? (
-        <div className="flex items-center justify-between gap-4 bg-red-500/10 border border-red-500/20 px-4 py-2 rounded-full">
-          <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-            <span className="text-xs font-bold text-red-600 dark:text-red-400">
-              Gravando Áudio (00:{String(recordingTimer).padStart(2, '0')})
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onCancelAudioRecord}
-              className="text-xs text-muted-foreground hover:text-foreground px-3 py-1 rounded-full hover:bg-muted"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={onStopAndSendAudio}
-              className="bg-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-full hover:bg-red-700 transition-colors shadow-xs"
-            >
-              Enviar Áudio
-            </button>
-          </div>
-        </div>
+        <AudioRecorderBar
+          timer={recordingTimer}
+          onCancel={onCancelAudioRecord}
+          onSend={onStopAndSendAudio}
+        />
       ) : (
-        /* Standard Input Controls */
-        <div className="flex items-center gap-2">
+        /* Layout: [⚡] [📎] [😊] [Input...] [🎤/▶] */
+        <div className="flex items-center gap-1.5">
+          {/* Quick Responses / Automations (⚡) */}
           <button
             type="button"
-            onClick={() => onToggleQuickPicker(!showQuickPicker)}
-            title="Respostas Rápidas (/)"
-            className="p-2 text-muted-foreground hover:text-amber-500 hover:bg-muted rounded-full transition-colors"
+            onClick={() => {
+              onToggleQuickPicker(!showQuickPicker);
+              setShowEmojiPicker(false);
+              setShowAttachmentMenu(false);
+            }}
+            title="Respostas Rápidas e Templates (/)"
+            className={`p-2 rounded-full transition-colors ${
+              showQuickPicker 
+                ? 'bg-amber-500/10 text-amber-500' 
+                : 'text-muted-foreground hover:text-amber-500 hover:bg-muted'
+            }`}
           >
             <Zap size={20} />
           </button>
 
+          {/* Attachment Menu (📎) */}
           <button
             type="button"
-            onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+            onClick={() => {
+              setShowAttachmentMenu(!showAttachmentMenu);
+              setShowEmojiPicker(false);
+              onToggleQuickPicker(false);
+            }}
             title="Anexar Arquivo"
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+            className={`p-2 rounded-full transition-colors ${
+              showAttachmentMenu 
+                ? 'bg-primary/10 text-primary' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
           >
             <Paperclip size={20} />
           </button>
 
+          {/* Emoji Picker (😊) */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowAttachmentMenu(false);
+              onToggleQuickPicker(false);
+            }}
+            title="Escolher Emojis"
+            className={`p-2 rounded-full transition-colors ${
+              showEmojiPicker 
+                ? 'bg-amber-500/10 text-amber-500' 
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+          >
+            <Smile size={20} />
+          </button>
+
+          {/* Text Input Field */}
           <div className="flex-1 relative">
             <input
               type="text"
-              placeholder="Digite uma mensagem ou digite '/' para respostas rápidas"
+              placeholder="Digite uma mensagem ou digite / para respostas rápidas e templates..."
               value={messageText}
-              onChange={(e) => onMessageChange(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full bg-muted/40 border border-border rounded-full py-2 px-4 text-xs focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+              className="w-full bg-muted/40 border border-border rounded-full py-2 px-4 text-xs focus:outline-none focus:ring-1 focus:ring-primary transition-all text-foreground"
             />
           </div>
 
+          {/* Dynamic Send (▶) vs Record Mic (🎤) Button */}
           {messageText.trim() ? (
             <button
               type="button"
-              onClick={onSend}
-              className="bg-primary text-white p-2.5 rounded-full hover:bg-primary-hover transition-all shadow-md shrink-0"
+              onClick={handleSendWithPreview}
+              title="Enviar Mensagem"
+              className="bg-primary text-primary-foreground p-2.5 rounded-full hover:bg-primary-hover transition-all shadow-md shrink-0 active:scale-95"
             >
               <Send size={18} />
             </button>
@@ -222,13 +306,20 @@ export function ChatInputArea({
               type="button"
               onClick={onStartAudioRecord}
               title="Gravar Áudio de Voz"
-              className="bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 p-2.5 rounded-full transition-all shrink-0"
+              className="bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 p-2.5 rounded-full transition-all shrink-0 active:scale-95"
             >
               <Mic size={18} />
             </button>
           )}
         </div>
       )}
+
+      {/* New Quick Response Modal */}
+      <NewQuickResponseModal
+        isOpen={isNewQuickModalOpen}
+        onClose={() => setIsNewQuickModalOpen(false)}
+        onCreated={onQuickResponsesUpdated}
+      />
     </div>
   );
 }

@@ -1,214 +1,254 @@
-import React, { useRef, useEffect } from 'react';
-import { 
-  Check, 
-  CheckCheck, 
-  FileText, 
-  Download, 
-  MapPin, 
-  User as UserIcon, 
-  Play, 
-  Pause, 
-  Volume2, 
-  Sparkles,
-  ExternalLink
-} from 'lucide-react';
-import { Message } from '../types';
+import React, { useRef, useEffect, useState } from 'react';
+import { Message, Chat } from '../types';
+import { PinnedMessageBanner } from './ChatMessageList/PinnedMessageBanner';
+import { MessageSearchBar } from './ChatMessageList/MessageSearchBar';
+import { ChatMessageItem } from './ChatMessageList/ChatMessageItem';
+import { QuickTaskModal } from './ChatHeader/QuickTaskModal';
+import { QuickEventModal } from './ChatHeader/QuickEventModal';
+import { isSameDay, isToday, isYesterday, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { cn } from '../../../shared/utils/cn';
-import { format } from 'date-fns';
 
 interface ChatMessageListProps {
   messages: Message[];
+  activeChat: Chat;
   isTyping?: boolean;
+  isSearchingMessages?: boolean;
+  onCloseSearch?: () => void;
+  showSystemEvents?: boolean;
+  onToggleSystemEvents?: () => void;
+  onReplyMessage: (msg: Message) => void;
+  onTogglePinMessage: (msg: Message) => void;
+  onToggleStarMessage: (msg: Message) => void;
+  onAddReaction: (msg: Message, emoji: string) => void;
+  onDeleteMessage: (msg: Message) => void;
+  isLoading?: boolean;
+  onLoadMore?: () => void;
 }
 
-export function ChatMessageList({ messages, isTyping }: ChatMessageListProps) {
+export function ChatMessageList({
+  messages,
+  activeChat,
+  isTyping,
+  isSearchingMessages = false,
+  onCloseSearch,
+  showSystemEvents = true,
+  onToggleSystemEvents,
+  onReplyMessage,
+  onTogglePinMessage,
+  onToggleStarMessage,
+  onAddReaction,
+  onDeleteMessage,
+  isLoading = false,
+  onLoadMore
+}: ChatMessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+
+  // Quick Task & Event Modals triggered from message menu
+  const [taskModalState, setTaskModalState] = useState<{ isOpen: boolean; initialText: string }>({
+    isOpen: false,
+    initialText: ''
+  });
+
+  const [eventModalState, setEventModalState] = useState<{ isOpen: boolean; initialTitle: string }>({
+    isOpen: false,
+    initialTitle: ''
+  });
+
+  // Filter messages based on system event toggle
+  const visibleMessages = messages.filter(
+    (msg) => showSystemEvents || !msg.isSystemEvent
+  );
+
+  // Pinned messages list
+  const pinnedMessages = messages.filter((msg) => msg.isPinned);
+
+  // Search matches
+  const searchMatches = visibleMessages.filter((msg) => {
+    if (!searchQuery.trim()) return false;
+    const query = searchQuery.toLowerCase();
+    const textMatch = msg.text && msg.text.toLowerCase().includes(query);
+    const fileNameMatch = msg.attachment?.fileName && msg.attachment.fileName.toLowerCase().includes(query);
+    return textMatch || fileNameMatch;
+  });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    setCurrentSearchIndex(0);
+    if (searchMatches.length > 0) {
+      scrollToMessageId(searchMatches[0].id);
+    }
+  }, [searchQuery]);
 
-  const renderMessageContent = (msg: Message) => {
-    switch (msg.type) {
-      case 'image':
-        return (
-          <div className="space-y-1">
-            <div className="rounded-lg overflow-hidden max-w-xs border border-border/40 bg-black/10">
-              <img 
-                src={msg.attachment?.fileUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&auto=format&fit=crop&q=80'} 
-                alt="Anexo de Imagem" 
-                className="w-full h-auto object-cover max-h-60"
-              />
-            </div>
-            {msg.text && msg.text !== msg.attachment?.fileName && (
-              <p className="text-xs pt-1 leading-relaxed">{msg.text}</p>
-            )}
-          </div>
-        );
+  useEffect(() => {
+    if (!isSearchingMessages) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length, isTyping, isSearchingMessages]);
 
-      case 'video':
-        return (
-          <div className="space-y-1">
-            <div className="rounded-lg overflow-hidden max-w-xs border border-border/40 bg-black relative flex items-center justify-center min-h-[160px]">
-              <div className="w-12 h-12 rounded-full bg-black/60 text-white flex items-center justify-center cursor-pointer hover:scale-105 transition-transform">
-                <Play size={20} className="ml-1" />
-              </div>
-            </div>
-            {msg.text && <p className="text-xs pt-1 leading-relaxed">{msg.text}</p>}
-          </div>
-        );
-
-      case 'audio':
-        return (
-          <div className="flex items-center gap-3 p-1 min-w-[200px]">
-            <button className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center shrink-0">
-              <Play size={16} className="ml-0.5" />
-            </button>
-            <div className="flex-1 space-y-1">
-              <div className="h-2 bg-muted/60 rounded-full w-full relative overflow-hidden">
-                <div className="h-full bg-primary w-1/3 rounded-full" />
-              </div>
-              <span className="text-[10px] text-muted-foreground block">
-                00:{msg.attachment?.duration ? String(msg.attachment.duration).padStart(2, '0') : '08'}
-              </span>
-            </div>
-          </div>
-        );
-
-      case 'pdf':
-      case 'document':
-        return (
-          <div className="flex items-center gap-3 p-2 bg-muted/30 rounded-lg border border-border/50 max-w-xs">
-            <div className="w-10 h-10 rounded bg-red-500/10 text-red-500 flex items-center justify-center shrink-0 font-bold">
-              <FileText size={20} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold truncate text-foreground">
-                {msg.attachment?.fileName || msg.text || 'Documento.pdf'}
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                {msg.attachment?.fileSize || '1.2 MB'} • PDF
-              </p>
-            </div>
-            <a 
-              href={msg.attachment?.fileUrl || '#'} 
-              target="_blank" 
-              rel="noreferrer"
-              className="p-1.5 hover:bg-muted rounded text-primary transition-colors shrink-0"
-            >
-              <Download size={16} />
-            </a>
-          </div>
-        );
-
-      case 'location':
-        return (
-          <div className="space-y-1 max-w-xs">
-            <div className="rounded-lg overflow-hidden border border-border/50 bg-emerald-500/10 p-3 flex items-center gap-2">
-              <MapPin size={24} className="text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-foreground">Localização Compartilhada</p>
-                <p className="text-[10px] text-muted-foreground">Av. Nazaré, 1200 - Belém, PA</p>
-              </div>
-            </div>
-            <a 
-              href="https://maps.google.com" 
-              target="_blank" 
-              rel="noreferrer"
-              className="text-[11px] text-primary font-semibold flex items-center gap-1 hover:underline"
-            >
-              <ExternalLink size={12} /> Abrir no Google Maps
-            </a>
-          </div>
-        );
-
-      case 'contact':
-        return (
-          <div className="p-3 bg-muted/40 rounded-lg border border-border/50 max-w-xs flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <UserIcon size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-foreground">{msg.attachment?.contactName || 'Contato Profissional'}</p>
-              <p className="text-[10px] text-muted-foreground">{msg.attachment?.contactPhone || '(91) 98000-1122'}</p>
-            </div>
-          </div>
-        );
-
-      case 'sticker':
-        return (
-          <div className="w-24 h-24 flex items-center justify-center text-4xl">
-            👏
-          </div>
-        );
-
-      default:
-        return <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>;
+  const scrollToMessageId = (messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
+  const handlePrevMatch = () => {
+    if (searchMatches.length === 0) return;
+    const nextIdx = (currentSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+    setCurrentSearchIndex(nextIdx);
+    scrollToMessageId(searchMatches[nextIdx].id);
+  };
+
+  const handleNextMatch = () => {
+    if (searchMatches.length === 0) return;
+    const nextIdx = (currentSearchIndex + 1) % searchMatches.length;
+    setCurrentSearchIndex(nextIdx);
+    scrollToMessageId(searchMatches[nextIdx].id);
+  };
+
+  // Format date header string in Portuguese (3.5)
+  const getDateLabel = (dateObj: Date) => {
+    if (isToday(dateObj)) return 'Hoje';
+    if (isYesterday(dateObj)) return 'Ontem';
+    return format(dateObj, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] bg-muted/10">
-      {messages.map((msg) => {
-        const timeFormatted = format(
-          typeof msg.timestamp?.toDate === 'function' ? msg.timestamp.toDate() : new Date(msg.timestamp || Date.now()),
-          'HH:mm'
-        );
-
-        return (
-          <div
-            key={msg.id}
-            className={cn(
-              "flex flex-col max-w-[75%] md:max-w-[65%]",
-              msg.isFromMe ? "ml-auto items-end" : "mr-auto items-start"
-            )}
-          >
-            <div
-              className={cn(
-                "p-3 rounded-2xl text-xs shadow-xs relative space-y-1 transition-all",
-                msg.isFromMe
-                  ? "bg-primary text-primary-foreground rounded-tr-xs"
-                  : "bg-card border border-border rounded-tl-xs text-card-foreground"
-              )}
-            >
-              {renderMessageContent(msg)}
-
-              <div
-                className={cn(
-                  "flex items-center justify-end gap-1 text-[9px] mt-1",
-                  msg.isFromMe ? "text-primary-foreground/70" : "text-muted-foreground"
-                )}
-              >
-                <span>{timeFormatted}</span>
-                {msg.isFromMe && (
-                  msg.status === 'read' ? (
-                    <CheckCheck size={13} className="text-sky-300" />
-                  ) : msg.status === 'delivered' ? (
-                    <CheckCheck size={13} />
-                  ) : (
-                    <Check size={13} />
-                  )
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {isTyping && (
-        <div className="mr-auto items-start max-w-[60%]">
-          <div className="p-3 rounded-2xl bg-card border border-border text-xs text-muted-foreground flex items-center gap-2">
-            <span className="flex gap-1 items-center">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
-            </span>
-            <span className="text-[10px] font-medium">Digitando...</span>
-          </div>
-        </div>
+    <div className="flex-1 flex flex-col min-h-0 relative overflow-hidden bg-background">
+      {/* Search Bar inside Conversation (3.4) */}
+      {isSearchingMessages && (
+        <MessageSearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          currentIndex={currentSearchIndex}
+          totalMatches={searchMatches.length}
+          onPrevMatch={handlePrevMatch}
+          onNextMatch={handleNextMatch}
+          onClose={() => {
+            setSearchQuery('');
+            if (onCloseSearch) onCloseSearch();
+          }}
+          showSystemEvents={showSystemEvents}
+          onToggleSystemEvents={onToggleSystemEvents || (() => {})}
+        />
       )}
 
-      <div ref={messagesEndRef} />
+      {/* Pinned Messages Banner (3.3) */}
+      <PinnedMessageBanner
+        pinnedMessages={pinnedMessages}
+        onScrollToMessage={scrollToMessageId}
+        onUnpinMessage={onTogglePinMessage}
+      />
+
+      {/* Scrollable Message List */}
+      <div 
+        ref={containerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-2 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] bg-muted/10"
+      >
+        {onLoadMore && messages.length >= 50 && (
+          <div className="flex justify-center mb-4">
+            <button
+              onClick={onLoadMore}
+              disabled={isLoading}
+              className="px-3 py-1.5 bg-card hover:bg-muted border border-border text-muted-foreground hover:text-foreground text-[10px] font-bold rounded-lg shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isLoading ? 'Carregando mais...' : 'Ver mensagens anteriores'}
+            </button>
+          </div>
+        )}
+
+        {isLoading && messages.length === 0 ? (
+          <div className="space-y-4 py-4">
+            {[1, 2, 3, 4].map((idx) => (
+              <div 
+                key={idx} 
+                className={cn(
+                  "flex flex-col gap-1 max-w-[60%] animate-pulse",
+                  idx % 2 === 0 ? "ml-auto items-end" : "mr-auto items-start"
+                )}
+              >
+                <div className="h-2.5 bg-muted rounded w-16" />
+                <div className="h-10 bg-muted/50 rounded-2xl w-48 sm:w-64" />
+                <div className="h-2 bg-muted rounded w-10 mt-1" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          visibleMessages.map((msg, idx) => {
+            const msgDate = typeof msg.timestamp?.toDate === 'function' 
+              ? msg.timestamp.toDate() 
+              : new Date(msg.timestamp || Date.now());
+
+            const prevMsg = idx > 0 ? visibleMessages[idx - 1] : null;
+            const prevMsgDate = prevMsg 
+              ? (typeof prevMsg.timestamp?.toDate === 'function' ? prevMsg.timestamp.toDate() : new Date(prevMsg.timestamp || Date.now()))
+              : null;
+
+            const showDateSeparator = !prevMsgDate || !isSameDay(msgDate, prevMsgDate);
+            const isCurrentMatch = searchMatches[currentSearchIndex]?.id === msg.id;
+
+            return (
+              <React.Fragment key={msg.id}>
+                {/* Date Separator (3.5) */}
+                {showDateSeparator && (
+                  <div className="flex justify-center my-4 select-none">
+                    <span className="bg-card/90 border border-border text-[11px] font-bold text-muted-foreground px-3 py-1 rounded-full shadow-2xs uppercase tracking-wider">
+                      {getDateLabel(msgDate)}
+                    </span>
+                  </div>
+                )}
+
+                <ChatMessageItem
+                  msg={msg}
+                  searchQuery={searchQuery}
+                  isSearchHighlight={isCurrentMatch}
+                  onReply={onReplyMessage}
+                  onTogglePin={onTogglePinMessage}
+                  onToggleStar={onToggleStarMessage}
+                  onAddReaction={onAddReaction}
+                  onDeleteMessage={onDeleteMessage}
+                  onCreateTask={(initialText) => setTaskModalState({ isOpen: true, initialText })}
+                  onCreateEvent={(initialTitle) => setEventModalState({ isOpen: true, initialTitle })}
+                />
+              </React.Fragment>
+            );
+          })
+        )}
+
+        {isTyping && (
+          <div className="mr-auto items-start max-w-[60%] my-2">
+            <div className="p-3 rounded-2xl bg-card border border-border text-xs text-muted-foreground flex items-center gap-2">
+              <span className="flex gap-1 items-center">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" />
+              </span>
+              <span className="text-[10px] font-medium">Digitando...</span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Quick Task & Event Modals from Message Actions */}
+      <QuickTaskModal
+        isOpen={taskModalState.isOpen}
+        onClose={() => setTaskModalState({ isOpen: false, initialText: '' })}
+        chat={activeChat}
+        initialTitle={taskModalState.initialText}
+      />
+
+      <QuickEventModal
+        isOpen={eventModalState.isOpen}
+        onClose={() => setEventModalState({ isOpen: false, initialTitle: '' })}
+        chat={activeChat}
+        initialTitle={eventModalState.initialTitle}
+      />
     </div>
   );
 }

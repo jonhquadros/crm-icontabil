@@ -56,7 +56,7 @@ export function CompanyProfileForm({ profile, onChange, onSubmit, isLoading }: C
           <div className="space-y-2">
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Razão Social / Nome</label>
             <Input
-              value={profile.name}
+              value={profile.name || ''}
               onChange={(e) => onChange({ ...profile, name: e.target.value })}
               required
             />

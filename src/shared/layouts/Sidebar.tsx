@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutGrid, Users, MessageSquare, Calendar, FileText, CheckSquare, BarChart3, Settings, LogOut, Shield, Layout, ChevronDown, List, Activity, PieChart, Send, UserX, Layers, Zap } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '../utils/cn';
 import { usePermission } from '../hooks/usePermission';
+import { useAuth } from '../../app/providers/AuthProvider';
+import { query, collection, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 interface SidebarProps {
   userName: string;
@@ -20,19 +23,26 @@ interface NavItemProps {
   key?: string;
 }
 
-const NavItem = ({ icon: Icon, label, to }: NavItemProps) => (
+const NavItem = ({ icon: Icon, label, to, unreadCount }: NavItemProps & { unreadCount?: number }) => (
   <NavLink
     to={to}
     end={to === '/dashboard'}
     className={({ isActive }) => cn(
-      'flex items-center px-6 py-3 transition-colors gap-3 border-l-4',
+      'flex items-center px-6 py-3 transition-colors gap-3 border-l-4 justify-between w-full',
       isActive 
         ? 'text-sidebar-accent-foreground bg-sidebar-accent border-primary' 
         : 'text-sidebar-foreground border-transparent hover:text-sidebar-accent-foreground hover:bg-sidebar-accent'
     )}
   >
-    <Icon size={20} className="opacity-70" />
-    {label}
+    <div className="flex items-center gap-3 min-w-0">
+      <Icon size={20} className="opacity-70 shrink-0" />
+      <span className="truncate">{label}</span>
+    </div>
+    {unreadCount !== undefined && unreadCount > 0 && (
+      <span className="bg-red-500/10 text-red-500 border border-red-500/20 font-extrabold text-[10px] px-2 py-0.5 rounded-full leading-none shrink-0 flex items-center gap-1">
+        🔴 {unreadCount}
+      </span>
+    )}
   </NavLink>
 );
 
@@ -84,6 +94,30 @@ const SubNavItem = ({ icon: Icon, label, to }: NavItemProps) => (
 
 export function Sidebar({ userName, userRole, onLogout, isOpen, isDrawer, onClose }: SidebarProps) {
   const { hasPermission, isAdmin } = usePermission();
+  const { userData } = useAuth();
+  const [whatsappUnreadCount, setWhatsappUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!userData?.companyId) return;
+
+    const q = query(
+      collection(db, 'chats'),
+      where('companyId', '==', userData.companyId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let totalUnread = 0;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        totalUnread += (data.unreadCount || 0);
+      });
+      setWhatsappUnreadCount(totalUnread);
+    }, (err) => {
+      console.error('Error loading unread counts in sidebar:', err);
+    });
+
+    return () => unsubscribe();
+  }, [userData?.companyId]);
 
   const navItems = [
     { icon: LayoutGrid, label: 'Dashboard', to: '/dashboard', show: hasPermission('dashboard') },
@@ -92,9 +126,8 @@ export function Sidebar({ userName, userRole, onLogout, isOpen, isDrawer, onClos
   ].filter(item => item.show);
 
   const resourceItems = [
-    { icon: Calendar, label: 'Agenda', to: '/dashboard/tasks', show: hasPermission('calendar') },
+    { icon: Calendar, label: 'Tarefas e Agenda', to: '/dashboard/tasks', show: hasPermission('tasks') || hasPermission('calendar') },
     { icon: FileText, label: 'Documentos', to: '/dashboard/documents', show: hasPermission('documents') },
-    { icon: CheckSquare, label: 'Tarefas', to: '/dashboard/tasks', show: hasPermission('tasks') },
     { icon: BarChart3, label: 'Relatórios', to: '/dashboard/reports', show: hasPermission('reports') },
     { icon: Settings, label: 'Configurações', to: '/dashboard/settings', show: true },
     { icon: Shield, label: 'Usuários', to: '/dashboard/users', show: isAdmin },
@@ -121,7 +154,13 @@ export function Sidebar({ userName, userRole, onLogout, isOpen, isDrawer, onClos
       <nav className="flex-1 py-4 overflow-y-auto">
         <div className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">Operações</div>
         {navItems.map((item) => (
-          <NavItem key={`${item.to}-${item.label}`} icon={item.icon} label={item.label} to={item.to} />
+          <NavItem 
+            key={`${item.to}-${item.label}`} 
+            icon={item.icon} 
+            label={item.label} 
+            to={item.to} 
+            unreadCount={item.label === 'WhatsApp' ? whatsappUnreadCount : undefined}
+          />
         ))}
         
         {hasPermission('whatsapp') && (

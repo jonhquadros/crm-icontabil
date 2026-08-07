@@ -9,7 +9,8 @@ export type MessageType =
   | 'document' 
   | 'location' 
   | 'contact' 
-  | 'sticker';
+  | 'sticker'
+  | 'system';
 
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read';
 
@@ -33,6 +34,17 @@ export interface AttachmentData {
   contactPhone?: string;
 }
 
+export interface MessageReaction {
+  emoji: string;
+  senderName: string;
+}
+
+export interface MessageReplyContext {
+  id: string;
+  senderName: string;
+  text: string;
+}
+
 export interface Message {
   id: string;
   companyId: string;
@@ -45,10 +57,16 @@ export interface Message {
   isFromMe: boolean;
   timestamp: any; // Timestamp or Date
   attachment?: AttachmentData;
+  isPinned?: boolean;
+  isStarred?: boolean;
+  reactions?: MessageReaction[];
+  replyTo?: MessageReplyContext;
+  isSystemEvent?: boolean;
+  systemEventType?: 'card_moved' | 'task_completed' | 'document_sent' | 'general';
 }
 
 export interface ChatFilterTab {
-  id: 'all' | 'unread' | 'waiting' | 'tags';
+  id: 'all' | 'unread' | 'waiting' | 'tags' | 'mine' | 'campaigns' | 'queue';
   label: string;
 }
 
@@ -58,6 +76,7 @@ export interface Chat {
   clientId?: string;
   contactName: string;
   contactPhone: string;
+  cpfCnpj?: string;
   avatarUrl?: string;
   lastMessage?: {
     text: string;
@@ -71,6 +90,14 @@ export interface Chat {
   companyName?: string;
   notes?: string;
   assignedUser?: string;
+  assignedUserId?: string;
+  assignedUserAvatar?: string;
+  openTasksCount?: number;
+  pendingDocsCount?: number;
+  isPinned?: boolean;
+  isMuted?: boolean;
+  campaignId?: string;
+  crmStage?: string;
   updatedAt: any;
   createdAt?: any;
 }

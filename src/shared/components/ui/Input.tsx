@@ -8,9 +8,14 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, icon, ...props }, ref) => {
-    const isControlled = 'value' in props;
-    const value = isControlled ? (props.value ?? '') : undefined;
+  (allProps, ref) => {
+    const { className, label, error, icon, value: rawValue, ...props } = allProps;
+    const isControlled = 'value' in allProps;
+
+    const inputProps: React.InputHTMLAttributes<HTMLInputElement> = { ...props };
+    if (isControlled) {
+      inputProps.value = rawValue ?? '';
+    }
 
     return (
       <div className="w-full space-y-1.5">
@@ -33,8 +38,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               error && 'border-danger focus-visible:ring-danger/20 focus-visible:border-danger',
               className
             )}
-            {...props}
-            value={value}
+            {...inputProps}
           />
         </div>
         {error && <p className="text-xs font-medium text-danger">{error}</p>}

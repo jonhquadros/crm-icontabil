@@ -1,4 +1,4 @@
-import { LayoutGrid, Users, MessageSquare, CheckSquare, BarChart3 } from 'lucide-react';
+import { LayoutGrid, Users, MessageSquare, Calendar, BarChart3 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '../utils/cn';
 
@@ -7,7 +7,7 @@ export function BottomNav() {
     { icon: LayoutGrid, label: 'Dashboard', to: '/dashboard' },
     { icon: Users, label: 'Clientes', to: '/dashboard/clients' },
     { icon: MessageSquare, label: 'WhatsApp', to: '/dashboard/whatsapp' },
-    { icon: CheckSquare, label: 'Tarefas', to: '/dashboard/tasks' },
+    { icon: Calendar, label: 'Tarefas e Agenda', to: '/dashboard/tasks' },
     { icon: BarChart3, label: 'Relatórios', to: '/dashboard/reports' },
   ];
 

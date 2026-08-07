@@ -10,7 +10,8 @@ import {
   getDocs,
   setDoc,
   serverTimestamp,
-  deleteDoc
+  deleteDoc,
+  limit
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { Chat, Message, QuickResponse, Tag } from '../types';
@@ -34,11 +35,12 @@ export const whatsappRepository = {
     });
   },
 
-  subscribeToMessages: (chatId: string, callback: (messages: Message[]) => void) => {
+  subscribeToMessages: (chatId: string, limitCount: number, callback: (messages: Message[]) => void) => {
     const q = query(
       collection(db, 'messages'),
       where('chatId', '==', chatId),
-      orderBy('timestamp', 'asc')
+      orderBy('timestamp', 'desc'),
+      limit(limitCount)
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -113,6 +115,16 @@ export const whatsappRepository = {
       tags,
       updatedAt: serverTimestamp(),
     });
+  },
+
+  updateMessage: async (messageId: string, data: Partial<Message>) => {
+    const ref = doc(db, 'messages', messageId);
+    await updateDoc(ref, data);
+  },
+
+  deleteMessage: async (messageId: string) => {
+    const ref = doc(db, 'messages', messageId);
+    await deleteDoc(ref);
   },
 
   getQuickResponses: async (companyId: string): Promise<QuickResponse[]> => {

@@ -90,7 +90,7 @@ export function IntegrationsTab({
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">URL de Endpoint (Payload Delivery)</label>
                 <Input
                   placeholder="https://n8n.suaempresa.com.br/webhook/lead-created"
-                  value={integrations.webhook.endpointUrl}
+                  value={integrations.webhook.endpointUrl || ''}
                   onChange={(e) => onChange({
                     ...integrations,
                     webhook: { ...integrations.webhook, endpointUrl: e.target.value }
@@ -102,7 +102,7 @@ export function IntegrationsTab({
                 <Input
                   type="password"
                   placeholder="whsec_123456789"
-                  value={integrations.webhook.secretKey}
+                  value={integrations.webhook.secretKey || ''}
                   onChange={(e) => onChange({
                     ...integrations,
                     webhook: { ...integrations.webhook, secretKey: e.target.value }

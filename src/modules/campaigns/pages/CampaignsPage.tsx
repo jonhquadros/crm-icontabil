@@ -178,7 +178,7 @@ export function CampaignsPage() {
   const HELPER_CHIPS = [
     { label: 'Primeiro Nome', value: '{{nome}}' },
     { label: 'Nome Completo', value: '{{nome_completo}}' },
-    { label: 'Nome da Empresa', value: '{{empresa}}' },
+    { label: 'CNAE Principal', value: '{{empresa}}' },
     { label: 'Cidade do Contato', value: '{{cidade}}' },
     { label: 'Saudação Randômica', value: '{{saudacao}}' },
     { label: 'Fechamento Randômico', value: '{{fechamento}}' },
@@ -1374,7 +1374,7 @@ export function CampaignsPage() {
                         <tr className="border-b border-slate-100 bg-slate-50 text-slate-500 font-bold">
                           <th className="py-2 px-3 font-semibold">Contato</th>
                           <th className="py-2 px-3 font-semibold">Telefone</th>
-                          <th className="py-2 px-3 font-semibold">Empresa / Cidade</th>
+                          <th className="py-2 px-3 font-semibold">CNAE Principal / Cidade</th>
                           <th className="py-2 px-3 font-semibold">Status</th>
                           <th className="py-2 px-3 font-semibold">Registro de Envio</th>
                           <th className="py-2 px-3 font-semibold text-right">Ação</th>
@@ -1395,8 +1395,12 @@ export function CampaignsPage() {
                               </td>
                               <td className="py-2 px-3 font-mono text-slate-600">{c.phone}</td>
                               <td className="py-2 px-3 text-slate-500">
-                                <div>{c.company || '-'}</div>
-                                {c.city && <div className="text-[10px] text-slate-400">{c.city}</div>}
+                                <div className="font-medium">{c.company || '-'}</div>
+                                <div className="flex flex-col gap-0.5 mt-1">
+                                  {c.city && <span className="text-[10px] text-slate-400">{c.city}</span>}
+                                  {c.taxRegime && <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 border border-blue-100 rounded px-1 py-0.25 w-fit">Regime: {c.taxRegime}</span>}
+                                  {c.socialCapital && <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 border border-emerald-100 rounded px-1 py-0.25 w-fit">Cap. Social: {c.socialCapital}</span>}
+                                </div>
                               </td>
                               <td className="py-2 px-3">
                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${

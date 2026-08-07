@@ -134,6 +134,18 @@ export const kanbanService = {
     });
   },
 
+  // Create new Kanban Card
+  createCard: async (card: Omit<KanbanCard, 'id' | 'createdAt' | 'updatedAt'>) => {
+    return addDoc(collection(db, 'kanban'), {
+      ...card,
+      active: true,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      stuckSince: serverTimestamp(),
+      lastInteraction: serverTimestamp(),
+    });
+  },
+
   // Batch update for reordering multiple cards
   reorderCards: async (updates: { id: string, position: number, column?: KanbanColumn }[]) => {
     const batch = writeBatch(db);

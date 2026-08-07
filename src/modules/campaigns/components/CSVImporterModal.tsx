@@ -38,6 +38,7 @@ interface ColumnMapping {
   companyCol: string;
   cityCol: string;
   emailCol: string;
+  socialCapitalCol: string;
 }
 
 interface ProcessedRow {
@@ -47,6 +48,8 @@ interface ProcessedRow {
   company: string;
   city: string;
   email: string;
+  taxRegime?: string;
+  socialCapital: string;
 
   normalizedPhone: string;
   isValid: boolean;
@@ -81,7 +84,8 @@ export function CSVImporterModal({
     nameCol: '',
     companyCol: '',
     cityCol: '',
-    emailCol: ''
+    emailCol: '',
+    socialCapitalCol: ''
   });
 
   // Processed Rows State
@@ -108,7 +112,7 @@ export function CSVImporterModal({
     setFileName('');
     setHeaders([]);
     setRawRows([]);
-    setMapping({ phoneCol: '', nameCol: '', companyCol: '', cityCol: '', emailCol: '' });
+    setMapping({ phoneCol: '', nameCol: '', companyCol: '', cityCol: '', emailCol: '', socialCapitalCol: '' });
     setProcessedRows([]);
     setInternalDuplicatesCount(0);
     setOptOutCount(0);
@@ -161,7 +165,8 @@ export function CSVImporterModal({
           nameCol: '',
           companyCol: '',
           cityCol: '',
-          emailCol: ''
+          emailCol: '',
+          socialCapitalCol: ''
         };
 
         detectedHeaders.forEach((h) => {
@@ -170,12 +175,14 @@ export function CSVImporterModal({
             autoMapping.phoneCol = h;
           } else if (!autoMapping.nameCol && (lower.includes('nome') || lower.includes('name') || lower.includes('cliente'))) {
             autoMapping.nameCol = h;
-          } else if (!autoMapping.companyCol && (lower.includes('empresa') || lower.includes('company') || lower.includes('razao') || lower.includes('razão'))) {
+          } else if (!autoMapping.companyCol && (lower.includes('empresa') || lower.includes('company') || lower.includes('razao') || lower.includes('razão') || lower.includes('cnae'))) {
             autoMapping.companyCol = h;
           } else if (!autoMapping.cityCol && (lower.includes('cidade') || lower.includes('city') || lower.includes('municipio'))) {
             autoMapping.cityCol = h;
           } else if (!autoMapping.emailCol && (lower.includes('email') || lower.includes('e-mail') || lower.includes('mail'))) {
             autoMapping.emailCol = h;
+          } else if (!autoMapping.socialCapitalCol && (lower.includes('capital') || lower.includes('cap. social') || lower.includes('capsocial'))) {
+            autoMapping.socialCapitalCol = h;
           }
         });
 
@@ -248,6 +255,7 @@ export function CSVImporterModal({
       const companyVal = currentMapping.companyCol ? String(row[currentMapping.companyCol] || '').trim() : '';
       const cityVal = currentMapping.cityCol ? String(row[currentMapping.cityCol] || '').trim() : '';
       const emailVal = currentMapping.emailCol ? String(row[currentMapping.emailCol] || '').trim() : '';
+      const socialCapitalVal = currentMapping.socialCapitalCol ? String(row[currentMapping.socialCapitalCol] || '').trim() : '';
 
       const phoneValidation = normalizePhone(rawPhoneVal);
 
@@ -285,6 +293,7 @@ export function CSVImporterModal({
         company: companyVal,
         city: cityVal,
         email: emailVal,
+        socialCapital: socialCapitalVal,
         normalizedPhone: phoneValidation.normalized,
         isValid,
         validationError,
@@ -323,11 +332,13 @@ export function CSVImporterModal({
     setImportProgress(10);
 
     const formattedContacts = validContacts.map(c => ({
-      phone: c.normalizedPhone,
-      name: c.name,
-      company: c.company,
-      city: c.city,
-      email: c.email
+      phone: c.normalizedPhone || '',
+      name: c.name || '',
+      company: c.company || '',
+      city: c.city || '',
+      email: c.email || '',
+      taxRegime: c.taxRegime || '',
+      socialCapital: c.socialCapital || ''
     }));
 
     // Chunk progress simulation for UI responsiveness
@@ -510,10 +521,10 @@ export function CSVImporterModal({
                     </select>
                   </div>
 
-                  {/* Empresa (Optional) */}
+                  {/* CNAE Principal (Optional) */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      Empresa
+                      CNAE Principal
                     </label>
                     <select
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-medium focus:outline-none"
@@ -556,6 +567,24 @@ export function CSVImporterModal({
                       value={mapping.emailCol}
                       onChange={(e) => handleMappingChange('emailCol', e.target.value)}
                       id="map-email-col"
+                    >
+                      <option value="">Ignorar / Não Mapear</option>
+                      {headers.map(h => (
+                        <option key={h} value={h}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Capital Social da Empresa (Optional) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Capital Social da Empresa
+                    </label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      value={mapping.socialCapitalCol}
+                      onChange={(e) => handleMappingChange('socialCapitalCol', e.target.value)}
+                      id="map-socialcapital-col"
                     >
                       <option value="">Ignorar / Não Mapear</option>
                       {headers.map(h => (
@@ -626,7 +655,8 @@ export function CSVImporterModal({
                         <th className="py-2.5 px-3">Telefone Lido</th>
                         <th className="py-2.5 px-3">Telefone Normalizado (55+)</th>
                         <th className="py-2.5 px-3">Nome</th>
-                        <th className="py-2.5 px-3">Empresa / Cidade</th>
+                        <th className="py-2.5 px-3">CNAE Principal / Cidade</th>
+                        <th className="py-2.5 px-3">Cap. Social</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -676,6 +706,11 @@ export function CSVImporterModal({
                           <td className="py-2.5 px-3 text-slate-500">
                             <div>{row.company || '-'}</div>
                             {row.city && <div className="text-[10px] text-slate-400">{row.city}</div>}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-slate-500">
+                            {row.socialCapital && <div className="text-xs font-semibold text-slate-700">{row.socialCapital}</div>}
+                            {!row.socialCapital && <span className="text-slate-300">-</span>}
                           </td>
                         </tr>
                       ))}

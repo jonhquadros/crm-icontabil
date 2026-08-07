@@ -151,5 +151,29 @@ export const evolutionService = {
       console.warn('Erro ao enviar mensagem via Evolution API:', err);
       return false;
     }
+  },
+
+  sendPresence: async (companyId: string, phone: string, presence: 'composing' | 'recording' | 'paused'): Promise<boolean> => {
+    try {
+      const config = await evolutionService.loadConfig(companyId);
+      if (!config.apiUrl) return false;
+      const cleanUrl = config.apiUrl.replace(/\/$/, '');
+      const cleanPhone = phone.replace(/\D/g, '');
+      await fetch(`${cleanUrl}/chat/sendPresence/${config.instanceName || 'icontabil-session'}`, {
+        method: 'POST',
+        headers: {
+          'apikey': config.apiKey || DEFAULT_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          number: cleanPhone,
+          delay: 1200,
+          presence
+        })
+      }).catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
   }
 };

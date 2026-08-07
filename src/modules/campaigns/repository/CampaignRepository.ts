@@ -227,7 +227,14 @@ export const CampaignRepository = {
         const contactCol = collection(db, 'campaigns', campaignId, 'contacts');
         const contactRef = doc(contactCol);
 
-        const newContact = {
+        const rawContact: Record<string, any> = {
+          phone: contactData.phone || '',
+          name: contactData.name || '',
+          company: contactData.company || '',
+          city: contactData.city || '',
+          email: contactData.email || '',
+          taxRegime: contactData.taxRegime || '',
+          socialCapital: contactData.socialCapital || '',
           ...contactData,
           id: contactRef.id,
           campaignId,
@@ -245,6 +252,14 @@ export const CampaignRepository = {
           messageId: null,
           optedOutAt: null
         };
+
+        // Clean any undefined properties
+        const newContact: Record<string, any> = {};
+        Object.keys(rawContact).forEach(k => {
+          if (rawContact[k] !== undefined) {
+            newContact[k] = rawContact[k];
+          }
+        });
 
         batch.set(contactRef, newContact);
       });

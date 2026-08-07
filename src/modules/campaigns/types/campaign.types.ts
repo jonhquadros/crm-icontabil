@@ -51,6 +51,8 @@ export interface CampaignContact {
   company?:    string;
   city?:       string;
   email?:      string;
+  taxRegime?:  string;
+  socialCapital?: string;
   customVars?: Record<string, string>;
 
   status:      ContactStatus;

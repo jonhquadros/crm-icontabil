@@ -311,9 +311,8 @@ export function UsersPage() {
     { key: 'clients', label: 'Clientes' },
     { key: 'kanban', label: 'CRM / Kanban' },
     { key: 'whatsapp', label: 'WhatsApp' },
-    { key: 'calendar', label: 'Agenda' },
     { key: 'documents', label: 'Documentos' },
-    { key: 'tasks', label: 'Tarefas' },
+    { key: 'tasks', label: 'Tarefas e Agenda' },
     { key: 'reports', label: 'Relatórios' },
     { key: 'users', label: 'Usuários' },
     { key: 'campaigns', label: 'Campanhas' }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Bell, Mail, MessageSquare, Sliders, Save } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Sliders, Save, Volume2, VolumeX } from 'lucide-react';
 import { NotificationSettings } from '../types';
 import { Button } from '../../../shared/components/ui/Button';
+import { notificationService } from '../../whatsapp/services/notificationService';
 
 interface NotificationSettingsFormProps {
   notifications: NotificationSettings;
@@ -13,6 +14,8 @@ interface NotificationSettingsFormProps {
 export function NotificationSettingsForm({ notifications, onChange, onSubmit, isLoading }: NotificationSettingsFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('icontabil_sound_muted', notifications.soundNotifications === false ? 'true' : 'false');
+    localStorage.setItem('icontabil_push_disabled', notifications.pushChat === false ? 'true' : 'false');
     onSubmit(notifications);
   };
 
@@ -127,6 +130,24 @@ export function NotificationSettingsForm({ notifications, onChange, onSubmit, is
               <div>
                 <p className="text-sm font-semibold">Notificações Push de Chat</p>
                 <p className="text-xs text-muted-foreground">Exibir popup na tela quando novas mensagens de leads forem recebidas.</p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={notifications.soundNotifications !== false}
+                onChange={(e) => {
+                  onChange({ ...notifications, soundNotifications: e.target.checked });
+                  if (e.target.checked) {
+                    notificationService.playSound();
+                  }
+                }}
+                className="mt-1 rounded border-input text-primary focus:ring-primary h-4 w-4"
+              />
+              <div>
+                <p className="text-sm font-semibold">Sons de Notificação</p>
+                <p className="text-xs text-muted-foreground">Reproduzir tom sonoro sutil ao receber novas mensagens de clientes no chat.</p>
               </div>
             </label>
           </div>

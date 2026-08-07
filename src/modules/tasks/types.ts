@@ -10,11 +10,12 @@ export interface Task {
   description?: string;
   status: TaskStatus;
   priority: TaskPriority;
-  dueDate: Timestamp | null;
-  assignedTo?: string[]; // user IDs
+  dueDate: any;
+  assignedTo?: any; // string or array of user IDs
+  category?: string;
   clientId?: string;
   active: boolean;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: any;
+  updatedAt: any;
   createdBy: string;
 }

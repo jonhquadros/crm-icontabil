@@ -56,6 +56,8 @@ export const contactImportSchema = z.object({
   company: z.string().optional(),
   city: z.string().optional(),
   email: z.string().email('E-mail inválido').optional().or(z.literal('')),
+  taxRegime: z.string().optional(),
+  socialCapital: z.string().optional(),
 });
 
 export type CampaignFormValues = z.infer<typeof campaignFormSchema>;

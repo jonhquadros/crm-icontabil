@@ -26,6 +26,7 @@ export interface NotificationSettings {
   whatsappStatus: boolean;
   whatsappReminders: boolean;
   pushChat: boolean;
+  soundNotifications?: boolean;
 }
 
 export interface PersonalizationSettings {

@@ -12,14 +12,13 @@ interface EditPermissionsModalProps {
   user: AppUser | null;
 }
 
-const MODULE_LABELS: Record<keyof UserPermissions, string> = {
+const MODULE_LABELS: Record<string, string> = {
   dashboard: 'Dashboard / Métricas',
   clients: 'Clientes / CRM',
   kanban: 'CRM / Pipeline',
   whatsapp: 'WhatsApp Integrado',
-  calendar: 'Agenda / Calendário',
   documents: 'Documentos / Arquivos',
-  tasks: 'Tarefas / Projetos',
+  tasks: 'Tarefas e Agenda',
   reports: 'Relatórios',
   users: 'Gestão de Usuários',
   campaigns: 'Campanhas / Marketing'
